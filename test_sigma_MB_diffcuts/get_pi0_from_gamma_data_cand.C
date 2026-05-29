@@ -32,6 +32,24 @@ const float ncoll[] = {
 
 const float mee_min = 0.01, mee_max = 0.12;
 
+// Scale factors for sectors 0–7
+const double scale[8] = {
+    0.988, 0.990, 0.985, 0.981,
+    0.980, 0.985, 1.025, 1.023
+};
+
+// Smear c1 values for sectors 0–7
+const double smear_c1[8] = {
+    0.055, 0.066, 0.055, 0.059,
+    0.057, 0.056, 0.072, 0.072
+};
+
+// Smear c2 values for sectors 0–7
+const double smear_c2[8] = {
+    0.011, 0.017, 0.011, 0.013,
+    0.012, 0.012, 0.063, 0.062
+};
+
 float EMCMAP[8][48][96];
 static const double Me = 0.000510998918;
 static const double Me2 = Me*Me;
@@ -39,7 +57,7 @@ const int centbin = 5;
 const int sectbin = 1;
 const int Sectbin = 8;
 const double PC1_DPHI_CUT = 0.02, PC1_DZ_CUT = 0.5;
-float ecore_cut = 0.4;
+float ecore_cut = 0.3;
 float chi2_cut = 3.0;
 
 TH1F* hpT_pi0[centbin];
@@ -172,6 +190,13 @@ void get_pi0_from_gamma_data_cand(const char* inFile = "../tong1.root", const ch
   gSystem->Load("/direct/phenix+u/tongzhouguo/install/lib/libsvxcentana.so");
   gSystem->Load("/direct/phenix+u/tongzhouguo/install/lib/libRun14AuAuLeptonConvReco.so");
   Reconstruction reco("/gpfs/mnt/gpfs02/phenix/plhf/plhf1/tongzhouguo/yuri_embed/embed/analysis/emb/lookup_3D_one_phi.root");
+
+
+  TF1 f_rand("f","gaus",-5,5);
+  f_rand.SetParameter(0,1);
+  f_rand.SetParameter(1,0);
+  f_rand.SetParameter(2,1);
+
 
   read_in_emcmap();
   TFile* input = new TFile(inFile,"READ");
@@ -362,6 +387,8 @@ void get_pi0_from_gamma_data_cand(const char* inFile = "../tong1.root", const ch
             float chi2_A   = myclust_A.GetChi2();
             //int sector = 7 - myclust_A.GetSect();
             int sector = myclust_A.GetSect();
+            const double e_smear = scale[sector] *  ( 1 + f_rand.GetRandom() * sqrt( pow ( smear_c1[sector] , 2 ) + pow( smear_c2[sector] / sqrt(e_A), 2) ) );          // (1.+0.025*f.GetRandom());//// 8.1/sqrt(E)+2.1
+            e_A *= e_smear;
             float id_clust = myclust_A.GetEmcId();
             if(id_clust==id_trk1||id_clust==id_trk2) continue;
             //cout<<"IY = "<<myclust_A.GetIY()<<"\t"<<"IZ = "<<myclust_A.GetIZ()<<endl;

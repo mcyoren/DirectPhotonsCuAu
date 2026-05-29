@@ -32,6 +32,50 @@ const float ncoll[] = {
 
 const float mee_min = 0.01, mee_max = 0.12;
 
+// Scale factors for sectors 0–7
+const double scale[8] = {
+    0.988, 0.990, 0.985, 0.981,
+    0.980, 0.985, 1.025, 1.023
+};
+
+// Smear c1 values for sectors 0–7
+const double smear_c1[8] = {
+    0.055, 0.066, 0.055, 0.059,
+    0.057, 0.056, 0.072, 0.072
+};
+
+// Smear c2 values for sectors 0–7
+const double smear_c2[8] = {
+    0.011, 0.017, 0.011, 0.013,
+    0.012, 0.012, 0.063, 0.062
+};
+
+Double_t Hagedorn_Yield_Func(Double_t *x, Double_t *p) {
+  //
+  // Hagedorn function in 1/pt dN/pt from ppg088 
+  //
+    Double_t pt   = x[0];
+    Double_t mass = p[0];
+    Double_t mt   = TMath::Sqrt(pt * pt + mass * mass - 0.134*0.134);
+    Double_t A    = p[1];
+    Double_t a    = p[2];
+    Double_t b    = p[3];
+    Double_t p0   = p[4];
+    Double_t n    = p[5];
+   
+    Double_t value = 2 * TMath::Pi() * pt *A* pow( exp(-a*mt-b*mt*mt)+mt/p0 , -n);
+    return value;
+  }
+  
+TF1 *funcHagedorn(const Char_t *name, Double_t lowerlim,  Double_t upperlim,  const double dNdy = 95.7, const double mass = 0.135, const double A = 504.5, const double a = 0.5169, const double b = 0.1626, const double p0 = 0.7366, const double n = 8.274)
+{
+  TF1 *funcHagedorn = new TF1(name, Hagedorn_Yield_Func, lowerlim, upperlim, 6);
+  funcHagedorn->SetParameters(mass, A, a, b, p0, n); 
+  funcHagedorn->SetParNames("mass", "A", "a", "b", "p0", "n");
+  return funcHagedorn;
+}
+
+
 float EMCMAP[8][48][96];
 static const double Me = 0.000510998918;
 static const double Me2 = Me*Me;
@@ -39,7 +83,7 @@ const int centbin = 5;
 const int sectbin = 1;
 const int Sectbin = 8;
 const double PC1_DPHI_CUT = 0.02, PC1_DZ_CUT = 0.5;
-float ecore_cut = 0.4;
+float ecore_cut = 0.5;
 float chi2_cut = 3.0;
 
 TH1F* hpT_pi0[centbin];
@@ -57,7 +101,7 @@ double getDcenter(double phi1, double z1, double phi2, double z2){
 }
 
 void read_in_emcmap(){
-  ifstream readmap("/phenix/plhf/tongzhouguo/pi02gg/all_209_deadmap.txt");
+  ifstream readmap("/phenix/plhf/tongzhouguo/pi02gg/all_209_deadmap.txt");//"/phenix/plhf/mitran/Analysis/Run14AuAuDiLeptonAnalysis/AnaTrain/test/offline1/AnalysisTrain/DileptonAnalysis/Run14AuAuEmcalDeadMap.txt"
   for (int i = 0; i < 8; ++i){
     for (int j = 0; j < 48; ++j){
       for (int k = 0; k < 96; ++k){
@@ -165,7 +209,7 @@ bool solution(MyTrack* mytrk1, MyTrack* mytrk2, MyPair* mypair, Reconstruction* 
 
 
 
-void get_pi0_from_gamma_data(const char* inFile = "../tong1.root", const char* outFile = "2d_mass_pt.root", const int system = 0, int ert = 0){ 
+void get_pi0_from_gamma_data(const char* inFile = "../tong1.root", const char* outFile = "2d_mass_pt_05t.root", const int system = 0, int ert = 0){ 
   //gSystem->Load("/direct/phenix+u/tongzhouguo/install/lib/libDileptonAnalysisEvent");
   //gSystem->Load("/gpfs/mnt/gpfs02/phenix/plhf/plhf1/tongzhouguo/yuri_embed/embed/work/ee/offline/AnalysisTrain/Run14AuAuLeptonComby/lib/libRun14AuAuLeptonEvent.so");
   //gSystem->Load("/gpfs/mnt/gpfs02/phenix/plhf/plhf1/tongzhouguo/yuri_embed/embed/work/ee/offline/AnalysisTrain/Run14AuAuLeptonComby/lib/libRun14AuAuLeptonComby.so");
@@ -174,6 +218,12 @@ void get_pi0_from_gamma_data(const char* inFile = "../tong1.root", const char* o
   gSystem->Load("/direct/phenix+u/tongzhouguo/install/lib/libsvxcentana.so");
   gSystem->Load("/direct/phenix+u/tongzhouguo/install/lib/libRun14AuAuLeptonConvReco.so");
   Reconstruction reco("/gpfs/mnt/gpfs02/phenix/plhf/plhf1/tongzhouguo/yuri_embed/embed/analysis/emb/lookup_3D_one_phi.root");
+
+
+  TF1 f_rand("f","gaus",-5,5);
+  f_rand.SetParameter(0,1);
+  f_rand.SetParameter(1,0);
+  f_rand.SetParameter(2,1);
 
   read_in_emcmap();
   TFile* input = new TFile(inFile,"READ");
@@ -222,6 +272,8 @@ void get_pi0_from_gamma_data(const char* inFile = "../tong1.root", const char* o
     fHagedorn[icent] = new TF1("fHagedorn","[7]*6.2831853*x*((1/(1+exp((x-[5])/[6])))*[0]/(1+x/[1])**[2] + (1-(1/(1+exp((x-[5])/[6]))))*[3]/x**[4])",0.0,10.0);
     fHagedorn[icent]->SetNpx(10000);
     fHagedorn[icent]->SetParameters(1.922170e+02, 2.106180e+00, 1.284030e+01, 1.630000e+01, 8.060480e+00, 4.033000e+00, 6.395340e-02, 1.0*ncoll[icent]); ////NEED TO UPDATE PARAMETERS
+    //fHagedorn[icent]->SetParameters(364.5, 2.106180e+00, 1.284030e+01, 1.630000e+01, 8.261e+00, 4.033000e+00, 6.395340e-02, 1.0*ncoll[icent]); ////NEED TO UPDATE PARAMETERS
+    //fHagedorn[icent] = funcHagedorn(Form("fHagedorn_%d", icent), 0.01, 25, 99, 0.139, 364.5*ncoll[icent], 0.433, 0.1221 , 0.7385 , 8.261);
   }
 
   cout << "Histograms defined" << endl;
@@ -369,6 +421,8 @@ void get_pi0_from_gamma_data(const char* inFile = "../tong1.root", const char* o
             float chi2_A   = myclust_A.GetChi2();
             //int sector = 7 - myclust_A.GetSect();
             int sector = myclust_A.GetSect();
+            const double e_smear = scale[sector] *  ( 1 + f_rand.GetRandom() * sqrt( pow ( smear_c1[sector] , 2 ) + pow( smear_c2[sector] / sqrt(e_A), 2) ) );          // (1.+0.025*f.GetRandom());//// 8.1/sqrt(E)+2.1
+            e_A *= e_smear;
             float id_clust = myclust_A.GetEmcId();
             if(id_clust==id_trk1||id_clust==id_trk2) continue;
             //cout<<"IY = "<<myclust_A.GetIY()<<"\t"<<"IZ = "<<myclust_A.GetIZ()<<endl;
