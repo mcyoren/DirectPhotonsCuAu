@@ -1,0 +1,78 @@
+\documentclass[12pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{enumerate}
+\usepackage{multicol}
+\usepackage{csquotes}
+\usepackage[english]{babel}
+\usepackage{subcaption}
+\usepackage{appendix}
+\usepackage{tabularx}
+\usepackage{hyperref}
+\usepackage[backend=biber]{biblatex}
+\usepackage{pgffor}
+\usepackage{amsmath}
+\usepackage{xspace}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{multirow}
+\usepackage{subcaption}
+\usepackage{upgreek}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fvextra}
+\usepackage[section]{placeins}
+\usepackage[top=4cm, bottom=3.5cm, left=3cm, right=3cm]{geometry}
+
+\addbibresource{refs.bib}
+
+\numberwithin{figure}{subsection}
+\numberwithin{equation}{subsection}
+\numberwithin{table}{section}
+
+\graphicspath{{figs/}}
+\DeclareGraphicsExtensions{.pdf}
+\definecolor{bg}{rgb}{0.95,0.95,0.95}
+
+
+% Red reminders for adapting this old template to the new Cu+Au analysis.
+\newcommand{\replacefig}{\par\vspace{1mm}\noindent\textcolor{red}{\textbf{TODO (Tongzhou): replace/check this figure for the Cu+Au direct-photon analysis.}}\par\vspace{1mm}}
+\newcommand{\replacenum}{\textcolor{red}{\textbf{ TODO: replace/check all numbers in this caption/table for Cu+Au.}}}
+\newcommand{\replacetext}[1]{\textcolor{red}{\textbf{TODO: #1}}}
+\newcommand{\cutval}[1]{\textcolor{red}{#1}}
+
+\input{defs.tex}
+
+\begin{document}
+
+    \input{title}
+    \tableofcontents
+    \listoffigures
+    \listoftables
+    \newpage
+
+    %\setcounter{section}{-1}
+    %\input{sections/introduction}
+    \input{sections/analysis_organization}
+    \clearpage
+    \input{sections/qa}
+    \clearpage
+    %\input{sections/experimental_setup}
+    \input{sections/analysis}
+    \clearpage
+    \input{sections/systematics}
+    \clearpage
+    \input{sections/results}
+    \clearpage
+    \input{sections/appendix}
+
+    \newpage
+    \addcontentsline{toc}{section}{References}
+    \section*{References}
+    \printbibliography[heading=none]
+
+\end{document}
