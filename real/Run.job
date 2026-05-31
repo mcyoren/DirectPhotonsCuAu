@@ -1,0 +1,17 @@
+
+Universe       = vanilla
+Notification   = Never
+Priority        = +20
+Initialdir     = /gpfs/mnt/gpfs02/phenix/plhf/plhf1/mitran/Analysis/Tongzhou/real
++Experiment     = "PHENIX"
++Job_Type       = "cas"
+Executable     = /bin/csh
+Log            = /dev/null
+Output         = /dev/null
+Error          = /dev/null
+
+PeriodicHold = (NumJobStarts>=1 && JobStatus == 1)
+
+Arguments      = Run.csh $(Process)
+
+Queue 106

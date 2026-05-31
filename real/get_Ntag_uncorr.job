@@ -1,0 +1,17 @@
+Executable      = /bin/sh 
+Universe        = vanilla
+Priority        = +20
+Input           = /dev/null
+GetEnv          = True
+Log             = /phenix/plhf/tongzhouguo/log/log_$(Process).log
+Output	        = /phenix/plhf/tongzhouguo/log/out_$(Process).out
+Error           = /phenix/plhf/tongzhouguo/log/err_$(Process).err
+Initialdir      = $(PWD)
++Experiment     = "PHENIX"
++Job_Type       = "cas"
+Notification    = Error
+request_memory  = 5.0GB
+
+Arguments       = get_Ntag_uncorr.sh $(Process)
+
+Queue 104

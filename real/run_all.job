@@ -1,0 +1,16 @@
+Executable      = ./Run.csh 
+Universe        = vanilla
+Priority        = +20
+Input           = /dev/null
+Log             = /phenix/plhf/mitran/Analysis/Tongzhou/real/log/log_$(Process).log
+Output	        = /phenix/plhf/mitran/Analysis/Tongzhou/real/log/out_$(Process).out
+Error           = /phenix/plhf/mitran/Analysis/Tongzhou/real/log/err_$(Process).err
+Initialdir      = /phenix/plhf/mitran/Analysis/Tongzhou/real
++Experiment     = "PHENIX"
++Job_Type       = "cas"
+Notification    = Never
+request_memory  = 5.0GB
+
+Arguments       = $(Process)
+
+Queue 104
