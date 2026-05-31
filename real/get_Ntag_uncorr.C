@@ -69,7 +69,7 @@ const double POOLD = 10; // pool depth for ee+gamma mixed photon BG
 const double POOLD_EE = 3; // smaller pool depth for mixed-event ee BG
 
 // Histogram binning requested for systematic output.
-const int NMASS = 100;
+const int NMASS = 400;
 const int NPT = 100;
 const double MASS_MIN = 0.0;
 const double MASS_MAX = 1.0;
@@ -453,7 +453,9 @@ void get_Ntag_uncorr(const char* inFile = "/phenix/plhf/tongzhouguo/taxi/Run12Cu
                      const char* outFile = "test.root",
                      const char* runno = "372403",
                      const int system = 2,
-                     const int mode = 0)
+                     const int mode = 0,
+                     const int startEvent = 0,
+                     const int endEvent = -1)
 { // start make_TTree
   // system = 0 for pp; system = 1 for pAu
   // mode = 0 for data; mode = 1 for simulation; mode = 2 for embedding
@@ -571,14 +573,26 @@ void get_Ntag_uncorr(const char* inFile = "/phenix/plhf/tongzhouguo/taxi/Run12Cu
   book_histograms();
 
   int nevt = T_A->GetEntries();
+
+  int firstEvent = startEvent;
+  if (firstEvent < 0) firstEvent = 0;
+  if (firstEvent > nevt) firstEvent = nevt;
+
+  int lastEvent = endEvent;
+  if (lastEvent < 0 || lastEvent > nevt) lastEvent = nevt;
+  if (lastEvent < firstEvent) lastEvent = firstEvent;
+
+  cout << "Processing A-event range: [" << firstEvent << ", " << lastEvent
+       << ") out of nevt = " << nevt << endl;
+
   float w_pt = 1;
 
   //==============================
   //         Event A Loop
   //==============================
-  for (int ievent_A = 0; ievent_A < nevt; ievent_A++)
+  for (int ievent_A = firstEvent; ievent_A < lastEvent; ievent_A++)
   {
-    if (ievent_A%1000==0) cout << "Event: " << ievent_A << " / " << nevt << endl;
+    if ((ievent_A-firstEvent)%1000==0) cout << "Event: " << ievent_A << " / " << lastEvent << endl;
     ///if (ievent_A>10000) break; // for quick checks; remove for full processing
 
     h_nevents->Fill(0);
@@ -852,16 +866,16 @@ void get_Ntag_uncorr(const char* inFile = "/phenix/plhf/tongzhouguo/taxi/Run12Cu
           const float Pt_AA = real_convPhoton_AA.Pt();
 
           // Fill ee denominator.
-          fg2d_eemass_reco[icfg][icent]->Fill(convPhoton_AA.M(), convPhoton_AA.Pt(), w_pt);
+          fg2d_eemass_reco[icfg][icent]->Fill(convPhoton_AA.M(), Pt_AA, w_pt);
 
           // Old-like outputs for nominal/solution configs.
           if (icfg == 1)
           {
-            fg2d_eemass_reco_dphi[icent]->Fill(convPhoton_AA.M(), convPhoton_AA.Pt(), w_pt);
+            fg2d_eemass_reco_dphi[icent]->Fill(convPhoton_AA.M(), Pt_AA, w_pt);
           }
           if (icfg == 0)
           {
-            fg2d_eemass_reco_dzed[icent]->Fill(convPhoton_AA.M(), convPhoton_AA.Pt(), w_pt);
+            fg2d_eemass_reco_dzed[icent]->Fill(convPhoton_AA.M(), Pt_AA, w_pt);
           }
 
           if ((convPhoton_AA.M()<MEE_MIN_FOR_EEG) || (convPhoton_AA.M()>MEE_MAX_FOR_EEG)) continue;
@@ -901,17 +915,17 @@ void get_Ntag_uncorr(const char* inFile = "/phenix/plhf/tongzhouguo/taxi/Run12Cu
             pi0_AA = real_convPhoton_AA + emcPhoton_A;
 
             float Mass_AA = pi0_AA.M();
-            float Pt_pi0_AA = pi0_AA.Pt();
+            //float Pt_pi0_AA = pi0_AA.Pt();
 
-            fg2d_eegmass_reco[icfg][icent]->Fill(Mass_AA, Pt_pi0_AA, w_pt);
+            fg2d_eegmass_reco[icfg][icent]->Fill(Mass_AA, Pt_AA, w_pt);
 
             if (icfg == 1)
             {
-              fg2d_eegmass_reco_dphi[icent]->Fill(Mass_AA, Pt_pi0_AA, w_pt);
+              fg2d_eegmass_reco_dphi[icent]->Fill(Mass_AA, Pt_AA, w_pt);
             }
             if (icfg == 0)
             {
-              fg2d_eegmass_reco_dzed[icent]->Fill(Mass_AA, Pt_pi0_AA, w_pt);
+              fg2d_eegmass_reco_dzed[icent]->Fill(Mass_AA, Pt_AA, w_pt);
             }
           } // End Photon loop Event A
 
@@ -975,17 +989,17 @@ void get_Ntag_uncorr(const char* inFile = "/phenix/plhf/tongzhouguo/taxi/Run12Cu
               pi0_AB = real_convPhoton_AA + emcPhoton_B;
 
               float Mass_AB = pi0_AB.M();
-              float Pt_pi0_AB = pi0_AB.Pt();
+              //float Pt_pi0_AB = pi0_AB.Pt();
 
-              bg2d_eegmass_reco[icfg][icent]->Fill(Mass_AB, Pt_pi0_AB, w_pt);
+              bg2d_eegmass_reco[icfg][icent]->Fill(Mass_AB, Pt_AA, w_pt);
 
               if (icfg == 1)
               {
-                bg2d_eegmass_reco_dphi[icent]->Fill(Mass_AB, Pt_pi0_AB, w_pt);
+                bg2d_eegmass_reco_dphi[icent]->Fill(Mass_AB, Pt_AA, w_pt);
               }
               if (icfg == 0)
               {
-                bg2d_eegmass_reco_dzed[icent]->Fill(Mass_AB, Pt_pi0_AB, w_pt);
+                bg2d_eegmass_reco_dzed[icent]->Fill(Mass_AB, Pt_AA, w_pt);
               }
             } // End Photon loop Event B
           } // End Event B loop
