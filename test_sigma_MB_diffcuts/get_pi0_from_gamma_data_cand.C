@@ -17,7 +17,7 @@
 #include "/gpfs/mnt/gpfs02/phenix/plhf/plhf1/tongzhouguo/yuri_embed/embed/svx_cent_ana/source/MyEvent.h"
 #include "/gpfs/mnt/gpfs02/phenix/plhf/plhf1/tongzhouguo/yuri_embed/embed/svx_cent_ana/source/Reconstruction.h" 
 //#include "/direct/phenix+u/tongzhouguo/install/include/DileptonAnalysis/MyEvent.h"
-//#include "/direct/phenix+u/tongzhouguo/install/include/Run14AuAuLeptonCombyConstants.h"
+//#include "/direct/phenix+u/tongzhouguo/install/include/Run12AuAuLeptonCombyConstants.h"
 //#include "/direct/phenix+u/tongzhouguo/install/include/embedana.h"
 using namespace std;
 using namespace DileptonAnalysis;
@@ -183,12 +183,12 @@ bool solution(MyTrack* mytrk1, MyTrack* mytrk2, MyPair* mypair, Reconstruction* 
 
 void get_pi0_from_gamma_data_cand(const char* inFile = "../tong1.root", const char* outFile = "2d_mass_pt_cand.root", const int system = 0, int ert = 0){ 
   //gSystem->Load("/direct/phenix+u/tongzhouguo/install/lib/libDileptonAnalysisEvent");
-  //gSystem->Load("/gpfs/mnt/gpfs02/phenix/plhf/plhf1/tongzhouguo/yuri_embed/embed/work/ee/offline/AnalysisTrain/Run14AuAuLeptonComby/lib/libRun14AuAuLeptonEvent.so");
-  //gSystem->Load("/gpfs/mnt/gpfs02/phenix/plhf/plhf1/tongzhouguo/yuri_embed/embed/work/ee/offline/AnalysisTrain/Run14AuAuLeptonComby/lib/libRun14AuAuLeptonComby.so");
-  //gSystem->Load("/gpfs/mnt/gpfs02/phenix/plhf/plhf1/tongzhouguo/yuri_embed/embed/work/ee/offline/AnalysisTrain/Run14AuAuLeptonComby/lib/libRun14AuAuLeptonConvReco.so");
-  gSystem->Load("/direct/phenix+u/tongzhouguo/install/lib/libRun14AuAuLeptonEvent.so");
+  //gSystem->Load("/gpfs/mnt/gpfs02/phenix/plhf/plhf1/tongzhouguo/yuri_embed/embed/work/ee/offline/AnalysisTrain/Run12AuAuLeptonComby/lib/libRun12AuAuLeptonEvent.so");
+  //gSystem->Load("/gpfs/mnt/gpfs02/phenix/plhf/plhf1/tongzhouguo/yuri_embed/embed/work/ee/offline/AnalysisTrain/Run12AuAuLeptonComby/lib/libRun12AuAuLeptonComby.so");
+  //gSystem->Load("/gpfs/mnt/gpfs02/phenix/plhf/plhf1/tongzhouguo/yuri_embed/embed/work/ee/offline/AnalysisTrain/Run12AuAuLeptonComby/lib/libRun12AuAuLeptonConvReco.so");
+  gSystem->Load("/direct/phenix+u/tongzhouguo/install/lib/libRun12AuAuLeptonEvent.so");
   gSystem->Load("/direct/phenix+u/tongzhouguo/install/lib/libsvxcentana.so");
-  gSystem->Load("/direct/phenix+u/tongzhouguo/install/lib/libRun14AuAuLeptonConvReco.so");
+  gSystem->Load("/direct/phenix+u/tongzhouguo/install/lib/libRun12AuAuLeptonConvReco.so");
   Reconstruction reco("/gpfs/mnt/gpfs02/phenix/plhf/plhf1/tongzhouguo/yuri_embed/embed/analysis/emb/lookup_3D_one_phi.root");
 
 

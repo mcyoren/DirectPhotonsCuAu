@@ -65,8 +65,8 @@ float ecore_cut = 0.4;
 float chi2_cut = 3.0;
 
 float EMCMAP[8][48][96];
-const double POOLD = 10; // pool depth for ee+gamma mixed photon BG
-const double POOLD_EE = 3; // smaller pool depth for mixed-event ee BG
+const double POOLD = 100; // pool depth for ee+gamma mixed photon BG
+const double POOLD_EE = 30; // smaller pool depth for mixed-event ee BG
 
 // Histogram binning requested for systematic output.
 const int NMASS = 400;
@@ -359,6 +359,208 @@ int get_cent_bin(float cent_A)
   return icent;
 }
 
+
+//==============================================================
+// Fast systematic masks.
+// A bit in the mask means that this object/pair passes that config.
+// This avoids repeating the full track-pair-cluster loops for every config.
+//==============================================================
+unsigned int cfg_bit(const int icfg)
+{
+  return (1u << icfg);
+}
+
+unsigned int get_track_pass_mask(MyTrack& trk)
+{
+  unsigned int mask = 0u;
+  for (int icfg = 0; icfg < NCFG; ++icfg)
+  {
+    if (pass_eid(&trk, cfgs[icfg].eidType, cfgs[icfg].ptCut))
+    {
+      mask |= cfg_bit(icfg);
+    }
+  }
+  return mask;
+}
+
+void compute_real_track_masks(std::vector<MyTrack>& tracks,
+                              std::vector<unsigned int>& real_masks)
+{
+  const int ntrack = (int) tracks.size();
+
+  std::vector<unsigned int> pass_masks(ntrack, 0u);
+  real_masks.assign(ntrack, 0u);
+
+  for (int i = 0; i < ntrack; ++i)
+  {
+    pass_masks[i] = get_track_pass_mask(tracks[i]);
+  }
+
+  for (int i = 0; i < ntrack; ++i)
+  {
+    if (pass_masks[i] == 0u) continue;
+
+    unsigned int ghost_mask = 0u;
+
+    for (int j = 0; j < ntrack; ++j)
+    {
+      if (i == j) continue;
+
+      const unsigned int common_mask = pass_masks[i] & pass_masks[j];
+      if (common_mask == 0u) continue;
+
+      if (getDcenter(tracks[i].GetCrkphi(), tracks[i].GetCrkz(),
+                     tracks[j].GetCrkphi(), tracks[j].GetCrkz()) < DCENTERCUT)
+      {
+        ghost_mask |= common_mask;
+      }
+    }
+
+    real_masks[i] = pass_masks[i] & (~ghost_mask);
+  }
+}
+
+unsigned int get_conv_mask(const double dzed)
+{
+  unsigned int mask = 0u;
+  for (int icfg = 0; icfg < NCFG; ++icfg)
+  {
+    if (pass_conv_config(icfg, dzed))
+    {
+      mask |= cfg_bit(icfg);
+    }
+  }
+  return mask;
+}
+
+unsigned int get_cluster_mask(MyCluster& cl,
+                              const int emcid1,
+                              const int emcid2,
+                              const bool do_self_veto)
+{
+  int sector = 7 - cl.GetSect();
+  if (!apply_emcmap(sector, cl.GetIY(), cl.GetIZ())) return 0u;
+
+  if (do_self_veto)
+  {
+    if (cl.GetID() == emcid1 || cl.GetID() == emcid2) return 0u;
+  }
+
+  const double ecore0 = cl.GetEcore();
+  const double chi2 = cl.GetChi2();
+
+  unsigned int mask = 0u;
+  for (int icfg = 0; icfg < NCFG; ++icfg)
+  {
+    const double e = ecore0 * cfgs[icfg].escale;
+    if (e < cfgs[icfg].ecoreCut) continue;
+    if (chi2 > cfgs[icfg].chi2Cut) continue;
+
+    mask |= cfg_bit(icfg);
+  }
+
+  return mask;
+}
+
+TLorentzVector make_track_lv(MyTrack& trk)
+{
+  const double mom = sqrt(trk.GetPx()*trk.GetPx() +
+                          trk.GetPy()*trk.GetPy() +
+                          trk.GetPz()*trk.GetPz());
+
+  const double theta = trk.GetThe0();
+  const double phi = trk.GetPhi0();
+
+  const double px = mom * sin(theta) * cos(phi);
+  const double py = mom * sin(theta) * sin(phi);
+  const double pz = mom * cos(theta);
+
+  TLorentzVector p;
+  p.SetPxPyPzE(px, py, pz, sqrt(px*px + py*py + pz*pz + Me2));
+  return p;
+}
+
+void get_track_momentum_components(MyTrack& trk,
+                                   double& px,
+                                   double& py,
+                                   double& pz)
+{
+  const double mom = sqrt(trk.GetPx()*trk.GetPx() +
+                          trk.GetPy()*trk.GetPy() +
+                          trk.GetPz()*trk.GetPz());
+
+  const double theta = trk.GetThe0();
+  const double phi = trk.GetPhi0();
+
+  px = mom * sin(theta) * cos(phi);
+  py = mom * sin(theta) * sin(phi);
+  pz = mom * cos(theta);
+}
+
+void fill_old_ee_hists(const int icfg,
+                       const int icent,
+                       const double mass,
+                       const double pt,
+                       const double w)
+{
+  if (icfg == 1)
+  {
+    fg2d_eemass_reco_dphi[icent]->Fill(mass, pt, w);
+  }
+  if (icfg == 0)
+  {
+    fg2d_eemass_reco_dzed[icent]->Fill(mass, pt, w);
+  }
+}
+
+void fill_old_eeg_fg_hists(const int icfg,
+                           const int icent,
+                           const double mass,
+                           const double pt,
+                           const double w)
+{
+  if (icfg == 1)
+  {
+    fg2d_eegmass_reco_dphi[icent]->Fill(mass, pt, w);
+  }
+  if (icfg == 0)
+  {
+    fg2d_eegmass_reco_dzed[icent]->Fill(mass, pt, w);
+  }
+}
+
+void fill_old_eeg_bg_hists(const int icfg,
+                           const int icent,
+                           const double mass,
+                           const double pt,
+                           const double w)
+{
+  if (icfg == 1)
+  {
+    bg2d_eegmass_reco_dphi[icent]->Fill(mass, pt, w);
+  }
+  if (icfg == 0)
+  {
+    bg2d_eegmass_reco_dzed[icent]->Fill(mass, pt, w);
+  }
+}
+
+void fill_old_ee_bg_hists(const int icfg,
+                          const int icent,
+                          const double mass,
+                          const double pt,
+                          const double w)
+{
+  if (icfg == 1)
+  {
+    bg2d_eemass_reco_dphi[icent]->Fill(mass, pt, w);
+  }
+  if (icfg == 0)
+  {
+    bg2d_eemass_reco_dzed[icent]->Fill(mass, pt, w);
+  }
+}
+
 void book_histograms()
 {
   h_nevents = new TH1F("h_nevents","Event counter", 20, -0.5, 19.5);
@@ -399,10 +601,10 @@ void book_histograms()
                                                 "eemass mixed-event bg;M_{ee};p_{T,ee}",
                                                 NMASS, MASS_MIN, MASS_MAX, NPT, PT_MIN, PT_MAX);
       fg2d_eegmass_reco[icfg][icent] = new TH2F(Form("fg2d_eegmass_reco_%s_icent%d", cfgs[icfg].name, icent),
-                                                 "eegmass fg;M_{ee#gamma};p_{T,ee#gamma}",
+                                                 "eegmass fg;M_{ee#gamma};p_{T,ee}",
                                                  NMASS, MASS_MIN, MASS_MAX, NPT, PT_MIN, PT_MAX);
       bg2d_eegmass_reco[icfg][icent] = new TH2F(Form("bg2d_eegmass_reco_%s_icent%d", cfgs[icfg].name, icent),
-                                                 "eegmass bg mixed;M_{ee#gamma};p_{T,ee#gamma}",
+                                                 "eegmass bg mixed;M_{ee#gamma};p_{T,ee}",
                                                  NMASS, MASS_MIN, MASS_MAX, NPT, PT_MIN, PT_MAX);
 
       fg2d_eemass_reco[icfg][icent]->Sumw2();
@@ -592,8 +794,10 @@ void get_Ntag_uncorr(const char* inFile = "/phenix/plhf/tongzhouguo/taxi/Run12Cu
   //==============================
   for (int ievent_A = firstEvent; ievent_A < lastEvent; ievent_A++)
   {
-    if ((ievent_A-firstEvent)%1000==0) cout << "Event: " << ievent_A << " / " << lastEvent << endl;
-    ///if (ievent_A>10000) break; // for quick checks; remove for full processing
+    if ((ievent_A-firstEvent)%1000==0)
+    {
+      cout << "Event: " << ievent_A << " / " << lastEvent << endl;
+    }
 
     h_nevents->Fill(0);
     if (event_A) event_A->ClearEvent();
@@ -619,47 +823,37 @@ void get_Ntag_uncorr(const char* inFile = "/phenix/plhf/tongzhouguo/taxi/Run12Cu
     if (icent < 0 || icent >= centbin) continue;
 
     //===========================================
-    //       Track ghost selection for each config
+    // Load tracks once and compute config masks once.
+    // real_mask_A[i] contains the configs for which track i passes
+    // all track/EID cuts and is not a RICH ghost.
     //===========================================
-    std::vector< std::vector<int> > real_tracks(NCFG);
-
-    for (int icfg = 0; icfg < NCFG; ++icfg)
+    std::vector<MyTrack> tracks_A;
+    tracks_A.reserve(ntrack_A);
+    for (int itrk = 0; itrk < ntrack_A; ++itrk)
     {
-      for (int k1 = 0; k1 < ntrack_A; ++k1)
+      tracks_A.push_back(event_A->GetEntry(itrk));
+    }
+
+    std::vector<unsigned int> real_mask_A;
+    compute_real_track_masks(tracks_A, real_mask_A);
+
+    bool has_nominal_real_track = false;
+    for (int itrk = 0; itrk < ntrack_A; ++itrk)
+    {
+      if (real_mask_A[itrk] & cfg_bit(0))
       {
-        MyTrack trk1_tmp = event_A->GetEntry(k1);
-        if (!pass_eid(&trk1_tmp, cfgs[icfg].eidType, cfgs[icfg].ptCut)) continue;
-
-        int ghost_flag = 0;
-        for (int k2 = 0; k2 < ntrack_A; ++k2)
-        {
-          if (k1 == k2) continue;
-          MyTrack trk2_tmp = event_A->GetEntry(k2);
-          if (!pass_eid(&trk2_tmp, cfgs[icfg].eidType, cfgs[icfg].ptCut)) continue;
-
-          if (getDcenter(trk1_tmp.GetCrkphi(), trk1_tmp.GetCrkz(),
-                         trk2_tmp.GetCrkphi(), trk2_tmp.GetCrkz()) < DCENTERCUT)
-          {
-            ghost_flag = 1;
-            break;
-          }
-        }
-
-        if (!ghost_flag) real_tracks[icfg].push_back(k1);
+        has_nominal_real_track = true;
+        break;
       }
     }
 
-    // Count events with at least one nominal real track.
-    if (real_tracks[0].size() == 0) continue;
+    if (!has_nominal_real_track) continue;
     h_nevents->Fill(5);
 
     //==================================================
     // Mixed-event ee background.
-    // This is intentionally much cheaper than the eeg photon mixing:
-    // use only POOLD_EE matched B events per A event.
-    // We do not apply the conversion solution to mixed-event ee pairs,
-    // because the two tracks come from different events. This histogram is
-    // intended as a combinatorial ee mass background diagnostic/systematic.
+    // Optimized: read each B event once, compute B masks once,
+    // then fill all configs using bit masks.
     //==================================================
     if (mode == 0)
     {
@@ -687,87 +881,51 @@ void get_Ntag_uncorr(const char* inFile = "/phenix/plhf/tongzhouguo/taxi/Run12Cu
 
         poold_ee++;
 
-        for (int icfg = 0; icfg < NCFG; ++icfg)
+        std::vector<MyTrack> tracks_B_ee;
+        tracks_B_ee.reserve(ntrack_B_ee);
+        for (int kB = 0; kB < ntrack_B_ee; ++kB)
         {
-          if (real_tracks[icfg].size() == 0) continue;
+          tracks_B_ee.push_back(event_B->GetEntry(kB));
+        }
 
-          std::vector<int> real_tracks_B;
-          real_tracks_B.reserve(ntrack_B_ee);
+        std::vector<unsigned int> real_mask_B_ee;
+        compute_real_track_masks(tracks_B_ee, real_mask_B_ee);
 
-          for (int kB = 0; kB < ntrack_B_ee; ++kB)
+        for (int ia = 0; ia < ntrack_A; ++ia)
+        {
+          if (real_mask_A[ia] == 0u) continue;
+
+          MyTrack& trkA = tracks_A[ia];
+
+          const int armA = trkA.GetArm();
+          const int chargeA = trkA.GetCharge();
+
+          TLorentzVector pA = make_track_lv(trkA);
+
+          for (int ib = 0; ib < ntrack_B_ee; ++ib)
           {
-            MyTrack trkB_tmp = event_B->GetEntry(kB);
-            if (!pass_eid(&trkB_tmp, cfgs[icfg].eidType, cfgs[icfg].ptCut)) continue;
+            const unsigned int pass_mask = real_mask_A[ia] & real_mask_B_ee[ib];
+            if (pass_mask == 0u) continue;
 
-            int ghost_flag_B = 0;
-            for (int jB = 0; jB < ntrack_B_ee; ++jB)
+            MyTrack& trkB = tracks_B_ee[ib];
+
+            const int armB = trkB.GetArm();
+            const int chargeB = trkB.GetCharge();
+
+            if (armA != armB) continue;
+            if (chargeA * chargeB >= 0) continue; // unlike-sign mixed ee
+
+            TLorentzVector pB = make_track_lv(trkB);
+            TLorentzVector pairAB = pA + pB;
+
+            const double mass = pairAB.M();
+            const double pt = pairAB.Pt();
+
+            for (int icfg = 0; icfg < NCFG; ++icfg)
             {
-              if (kB == jB) continue;
-              MyTrack trkB2_tmp = event_B->GetEntry(jB);
-              if (!pass_eid(&trkB2_tmp, cfgs[icfg].eidType, cfgs[icfg].ptCut)) continue;
-
-              if (getDcenter(trkB_tmp.GetCrkphi(), trkB_tmp.GetCrkz(),
-                             trkB2_tmp.GetCrkphi(), trkB2_tmp.GetCrkz()) < DCENTERCUT)
-              {
-                ghost_flag_B = 1;
-                break;
-              }
-            }
-
-            if (!ghost_flag_B) real_tracks_B.push_back(kB);
-          }
-
-          if (real_tracks_B.size() == 0) continue;
-
-          for (unsigned int ia = 0; ia < real_tracks[icfg].size(); ++ia)
-          {
-            MyTrack trkA = event_A->GetEntry(real_tracks[icfg][ia]);
-
-            const int armA = trkA.GetArm();
-            const int chargeA = trkA.GetCharge();
-            const double momA = track_p(&trkA);
-            const double theA = trkA.GetThe0();
-            const double phiA = trkA.GetPhi0();
-
-            const double pxA = momA * sin(theA) * cos(phiA);
-            const double pyA = momA * sin(theA) * sin(phiA);
-            const double pzA = momA * cos(theA);
-
-            TLorentzVector pA;
-            pA.SetPxPyPzE(pxA, pyA, pzA, sqrt(pxA*pxA + pyA*pyA + pzA*pzA + Me2));
-
-            for (unsigned int ib = 0; ib < real_tracks_B.size(); ++ib)
-            {
-              MyTrack trkB = event_B->GetEntry(real_tracks_B[ib]);
-
-              const int armB = trkB.GetArm();
-              const int chargeB = trkB.GetCharge();
-
-              if (armA != armB) continue;
-              if (chargeA * chargeB >= 0) continue; // unlike-sign mixed ee
-
-              const double momB = track_p(&trkB);
-              const double theB = trkB.GetThe0();
-              const double phiB = trkB.GetPhi0();
-
-              const double pxB = momB * sin(theB) * cos(phiB);
-              const double pyB = momB * sin(theB) * sin(phiB);
-              const double pzB = momB * cos(theB);
-
-              TLorentzVector pB;
-              pB.SetPxPyPzE(pxB, pyB, pzB, sqrt(pxB*pxB + pyB*pyB + pzB*pzB + Me2));
-
-              TLorentzVector pairAB = pA + pB;
-              bg2d_eemass_reco[icfg][icent]->Fill(pairAB.M(), pairAB.Pt(), w_pt);
-
-              if (icfg == 1)
-              {
-                bg2d_eemass_reco_dphi[icent]->Fill(pairAB.M(), pairAB.Pt(), w_pt);
-              }
-              if (icfg == 0)
-              {
-                bg2d_eemass_reco_dzed[icent]->Fill(pairAB.M(), pairAB.Pt(), w_pt);
-              }
+              if (!(pass_mask & cfg_bit(icfg))) continue;
+              bg2d_eemass_reco[icfg][icent]->Fill(mass, pt, w_pt);
+              fill_old_ee_bg_hists(icfg, icent, mass, pt, w_pt);
             }
           }
         }
@@ -775,133 +933,147 @@ void get_Ntag_uncorr(const char* inFile = "/phenix/plhf/tongzhouguo/taxi/Run12Cu
     }
 
     //======================================
-    //      Config loops
+    //      Same-event ee pairs.
+    // Optimized: loop over each track pair once.
+    // Config-dependent decisions are encoded in masks.
     //======================================
-    for (int icfg = 0; icfg < NCFG; ++icfg)
+    for (int ireal_A1 = 0; ireal_A1 < ntrack_A; ++ireal_A1)
     {
-      if (real_tracks[icfg].size() == 0) continue;
+      if (real_mask_A[ireal_A1] == 0u) continue;
 
-      for (unsigned int ireal_A1 = 0; ireal_A1 < real_tracks[icfg].size(); ++ireal_A1)
+      MyTrack& mytrk_A1 = tracks_A[ireal_A1];
+
+      int arm_A1 = mytrk_A1.GetArm();
+      int charge_A1 = mytrk_A1.GetCharge();
+      int emcid_A1 = mytrk_A1.GetEmcId();
+      float phidc_A1 = mytrk_A1.GetPhiDC();
+      float zed_A1 = mytrk_A1.GetZDC();
+
+      double momx_A1 = 0.0;
+      double momy_A1 = 0.0;
+      double momz_A1 = 0.0;
+      get_track_momentum_components(mytrk_A1, momx_A1, momy_A1, momz_A1);
+
+      for (int ireal_A2 = ireal_A1+1; ireal_A2 < ntrack_A; ++ireal_A2)
       {
-        MyTrack mytrk_A1 = event_A->GetEntry(real_tracks[icfg][ireal_A1]);
+        const unsigned int track_pair_mask = real_mask_A[ireal_A1] & real_mask_A[ireal_A2];
+        if (track_pair_mask == 0u) continue;
 
-        float mom_A1 = sqrt(mytrk_A1.GetPx()*mytrk_A1.GetPx() +
-                            mytrk_A1.GetPy()*mytrk_A1.GetPy() +
-                            mytrk_A1.GetPz()*mytrk_A1.GetPz());
+        MyTrack& mytrk_A2 = tracks_A[ireal_A2];
 
-        int arm_A1 = mytrk_A1.GetArm();
-        int charge_A1 = mytrk_A1.GetCharge();
-        int emcid_A1 = mytrk_A1.GetEmcId();
-        float the_A1 = mytrk_A1.GetThe0();
-        float phi_A1 = mytrk_A1.GetPhi0();
-        float phidc_A1 = mytrk_A1.GetPhiDC();
-        float zed_A1 = mytrk_A1.GetZDC();
+        int arm_A2 = mytrk_A2.GetArm();
+        int charge_A2 = mytrk_A2.GetCharge();
+        int emcid_A2 = mytrk_A2.GetEmcId();
+        float phidc_A2 = mytrk_A2.GetPhiDC();
+        float zed_A2 = mytrk_A2.GetZDC();
 
-        float momx_A1 = mom_A1 * sin(the_A1) * cos(phi_A1);
-        float momy_A1 = mom_A1 * sin(the_A1) * sin(phi_A1);
-        float momz_A1 = mom_A1 * cos(the_A1);
+        float dzed = fabs(zed_A1-zed_A2);
 
-        for (unsigned int ireal_A2 = ireal_A1+1; ireal_A2 < real_tracks[icfg].size(); ++ireal_A2)
+        for (int icfg = 0; icfg < NCFG; ++icfg)
         {
-          MyTrack mytrk_A2 = event_A->GetEntry(real_tracks[icfg][ireal_A2]);
+          if (track_pair_mask & cfg_bit(icfg)) h_cutflow[icfg]->Fill(0);
+        }
 
-          float mom_A2 = sqrt(mytrk_A2.GetPx()*mytrk_A2.GetPx() +
-                              mytrk_A2.GetPy()*mytrk_A2.GetPy() +
-                              mytrk_A2.GetPz()*mytrk_A2.GetPz());
+        if (fabs(phidc_A1-phidc_A2)<PC1_DPHI_CUT && fabs(zed_A1-zed_A2)<PC1_DZ_CUT) continue;
+        if (charge_A1 == charge_A2) continue;
+        if (arm_A1 != arm_A2) continue;
+        if (emcid_A1 == emcid_A2) continue;
 
-          int arm_A2 = mytrk_A2.GetArm();
-          int charge_A2 = mytrk_A2.GetCharge();
-          int emcid_A2 = mytrk_A2.GetEmcId();
-          float the_A2 = mytrk_A2.GetThe0();
-          float phi_A2 = mytrk_A2.GetPhi0();
-          float phidc_A2 = mytrk_A2.GetPhiDC();
-          float zed_A2 = mytrk_A2.GetZDC();
+        for (int icfg = 0; icfg < NCFG; ++icfg)
+        {
+          if (track_pair_mask & cfg_bit(icfg)) h_cutflow[icfg]->Fill(1);
+        }
 
-          float momx_A2 = mom_A2 * sin(the_A2) * cos(phi_A2);
-          float momy_A2 = mom_A2 * sin(the_A2) * sin(phi_A2);
-          float momz_A2 = mom_A2 * cos(the_A2);
+        MyPair mypair_AA;
+        if (!solution(&mytrk_A1, &mytrk_A2, &mypair_AA, &reco, zVtx_A)) continue;
 
-          float dzed = fabs(zed_A1-zed_A2);
+        for (int icfg = 0; icfg < NCFG; ++icfg)
+        {
+          if (track_pair_mask & cfg_bit(icfg)) h_cutflow[icfg]->Fill(2);
+        }
 
-          h_cutflow[icfg]->Fill(0);
+        const unsigned int conv_mask = get_conv_mask(dzed);
+        const unsigned int pair_pass_mask = track_pair_mask & conv_mask;
+        if (pair_pass_mask == 0u) continue;
 
-          if (fabs(phidc_A1-phidc_A2)<PC1_DPHI_CUT && fabs(zed_A1-zed_A2)<PC1_DZ_CUT) continue;
-          if (charge_A1 == charge_A2) continue;
-          if (arm_A1 != arm_A2) continue;
-          if (emcid_A1 == emcid_A2) continue;
-          h_cutflow[icfg]->Fill(1);
+        for (int icfg = 0; icfg < NCFG; ++icfg)
+        {
+          if (pair_pass_mask & cfg_bit(icfg)) h_cutflow[icfg]->Fill(3);
+        }
 
-          MyPair mypair_AA;
-          if (!solution(&mytrk_A1, &mytrk_A2, &mypair_AA, &reco, zVtx_A)) continue;
-          h_cutflow[icfg]->Fill(2);
+        double momx_A2 = 0.0;
+        double momy_A2 = 0.0;
+        double momz_A2 = 0.0;
+        get_track_momentum_components(mytrk_A2, momx_A2, momy_A2, momz_A2);
 
-          if (!pass_conv_config(icfg, dzed)) continue;
-          h_cutflow[icfg]->Fill(3);
+        TLorentzVector p_A1_DC;
+        p_A1_DC.Clear();
+        p_A1_DC.SetPx(momx_A1);
+        p_A1_DC.SetPy(momy_A1);
+        p_A1_DC.SetPz(momz_A1);
+        p_A1_DC.SetE(sqrt(pow(p_A1_DC.P(),2) + Me2));
 
-          TLorentzVector p_A1_DC;
-          p_A1_DC.Clear();
-          p_A1_DC.SetPx(momx_A1);
-          p_A1_DC.SetPy(momy_A1);
-          p_A1_DC.SetPz(momz_A1);
-          p_A1_DC.SetE(sqrt(pow(p_A1_DC.P(),2) + Me2));
+        TLorentzVector p_A2_DC;
+        p_A2_DC.Clear();
+        p_A2_DC.SetPx(momx_A2);
+        p_A2_DC.SetPy(momy_A2);
+        p_A2_DC.SetPz(momz_A2);
+        p_A2_DC.SetE(sqrt(pow(p_A2_DC.P(),2) + Me2));
 
-          TLorentzVector p_A2_DC;
-          p_A2_DC.Clear();
-          p_A2_DC.SetPx(momx_A2);
-          p_A2_DC.SetPy(momy_A2);
-          p_A2_DC.SetPz(momz_A2);
-          p_A2_DC.SetE(sqrt(pow(p_A2_DC.P(),2) + Me2));
+        TLorentzVector convPhoton_AA;
+        convPhoton_AA.Clear();
+        convPhoton_AA = p_A1_DC + p_A2_DC;
 
-          TLorentzVector convPhoton_AA;
-          convPhoton_AA.Clear();
-          convPhoton_AA = p_A1_DC + p_A2_DC;
+        TLorentzVector real_convPhoton_AA;
+        real_convPhoton_AA.Clear();
+        real_convPhoton_AA.SetPx(momx_A1+momx_A2);
+        real_convPhoton_AA.SetPy(momy_A1+momy_A2);
+        real_convPhoton_AA.SetPz(momz_A1+momz_A2);
+        real_convPhoton_AA.SetE(sqrt(pow(convPhoton_AA.P(),2)));
 
-          TLorentzVector real_convPhoton_AA;
-          real_convPhoton_AA.Clear();
-          real_convPhoton_AA.SetPx(momx_A1+momx_A2);
-          real_convPhoton_AA.SetPy(momy_A1+momy_A2);
-          real_convPhoton_AA.SetPz(momz_A1+momz_A2);
-          real_convPhoton_AA.SetE(sqrt(pow(convPhoton_AA.P(),2)));
+        const float Pt_AA = real_convPhoton_AA.Pt();
 
-          const float Pt_AA = real_convPhoton_AA.Pt();
-
-          // Fill ee denominator.
+        // Fill ee denominator for all configs passing this same pair.
+        for (int icfg = 0; icfg < NCFG; ++icfg)
+        {
+          if (!(pair_pass_mask & cfg_bit(icfg))) continue;
           fg2d_eemass_reco[icfg][icent]->Fill(convPhoton_AA.M(), Pt_AA, w_pt);
+          fill_old_ee_hists(icfg, icent, convPhoton_AA.M(), Pt_AA, w_pt);
+        }
 
-          // Old-like outputs for nominal/solution configs.
-          if (icfg == 1)
+        if ((convPhoton_AA.M()<MEE_MIN_FOR_EEG) || (convPhoton_AA.M()>MEE_MAX_FOR_EEG)) continue;
+
+        for (int icfg = 0; icfg < NCFG; ++icfg)
+        {
+          if (pair_pass_mask & cfg_bit(icfg)) h_cutflow[icfg]->Fill(4);
+        }
+
+        //==================================================
+        // combine with photons from same event: FG
+        // Optimized: loop clusters once, then fill all passing configs.
+        // The y-axis is intentionally Pt_AA (ee pT), not pi0 pT.
+        //==================================================
+        for (int iclust_A = 0; iclust_A < nclust_A; ++iclust_A)
+        {
+          MyCluster myclust_A = event_A->GetClusterEntry(iclust_A);
+
+          const unsigned int cluster_mask =
+            get_cluster_mask(myclust_A, emcid_A1, emcid_A2, true);
+
+          const unsigned int pass_mask = pair_pass_mask & cluster_mask;
+          if (pass_mask == 0u) continue;
+
+          float xclust_A = myclust_A.GetX();
+          float yclust_A = myclust_A.GetY();
+          float zclust_A = myclust_A.GetZ()-zVtx_A;
+          double r_A = sqrt(xclust_A*xclust_A + yclust_A*yclust_A + zclust_A*zclust_A);
+          if (r_A <= 0.0) continue;
+
+          for (int icfg = 0; icfg < NCFG; ++icfg)
           {
-            fg2d_eemass_reco_dphi[icent]->Fill(convPhoton_AA.M(), Pt_AA, w_pt);
-          }
-          if (icfg == 0)
-          {
-            fg2d_eemass_reco_dzed[icent]->Fill(convPhoton_AA.M(), Pt_AA, w_pt);
-          }
+            if (!(pass_mask & cfg_bit(icfg))) continue;
 
-          if ((convPhoton_AA.M()<MEE_MIN_FOR_EEG) || (convPhoton_AA.M()>MEE_MAX_FOR_EEG)) continue;
-          h_cutflow[icfg]->Fill(4);
-
-          //==================================================
-          // combine with photons from same event: FG
-          //==================================================
-          for (int iclust_A = 0; iclust_A < nclust_A; ++iclust_A)
-          {
-            MyCluster myclust_A = event_A->GetClusterEntry(iclust_A);
-            float xclust_A = myclust_A.GetX();
-            float yclust_A = myclust_A.GetY();
-            float zclust_A = myclust_A.GetZ()-zVtx_A; // original real-data behavior
-            float e_A = myclust_A.GetEcore() * cfgs[icfg].escale;
-            float chi2_A = myclust_A.GetChi2();
-
-            int sector_A = 7 - myclust_A.GetSect();
-            if (!apply_emcmap(sector_A, myclust_A.GetIY(), myclust_A.GetIZ())) continue;
-            if (e_A < cfgs[icfg].ecoreCut) continue;
-            if (chi2_A > cfgs[icfg].chi2Cut) continue;
-            if (myclust_A.GetID() == emcid_A1 || myclust_A.GetID() == emcid_A2) continue;
-            h_cutflow[icfg]->Fill(5);
-
-            double r_A = sqrt(xclust_A*xclust_A + yclust_A*yclust_A + zclust_A*zclust_A);
-            if (r_A <= 0.0) continue;
+            const double e_A = myclust_A.GetEcore() * cfgs[icfg].escale;
 
             TLorentzVector emcPhoton_A;
             emcPhoton_A.Clear();
@@ -915,67 +1087,68 @@ void get_Ntag_uncorr(const char* inFile = "/phenix/plhf/tongzhouguo/taxi/Run12Cu
             pi0_AA = real_convPhoton_AA + emcPhoton_A;
 
             float Mass_AA = pi0_AA.M();
-            //float Pt_pi0_AA = pi0_AA.Pt();
 
             fg2d_eegmass_reco[icfg][icent]->Fill(Mass_AA, Pt_AA, w_pt);
+            fill_old_eeg_fg_hists(icfg, icent, Mass_AA, Pt_AA, w_pt);
 
-            if (icfg == 1)
-            {
-              fg2d_eegmass_reco_dphi[icent]->Fill(Mass_AA, Pt_AA, w_pt);
-            }
-            if (icfg == 0)
-            {
-              fg2d_eegmass_reco_dzed[icent]->Fill(Mass_AA, Pt_AA, w_pt);
-            }
-          } // End Photon loop Event A
+            h_cutflow[icfg]->Fill(5);
+          }
+        } // End Photon loop Event A
 
-          //==================================================
-          // combine with photons from different event: BG
-          //==================================================
-          if (mode > 0) continue;
-          if (ievent_A > 100000) continue;
+        //==================================================
+        // combine with photons from different event: BG
+        // Optimized: B event and B clusters are read once per ee pair,
+        // not once per config.
+        //==================================================
+        if (mode > 0) continue;
+        if (ievent_A > 100000) continue;
 
-          int poold = 0;
+        int poold = 0;
 
-          for (int ievent_B = ievent_A+10; ievent_B < ievent_A + 10000; ievent_B++)
+        for (int ievent_B = ievent_A+10; ievent_B < ievent_A + 10000; ievent_B++)
+        {
+          if (poold >= POOLD) break;
+          if (ievent_B >= nevt) break;
+
+          if (event_B) event_B->ClearEvent();
+          br_B->GetEntry(ievent_B);
+          if (!event_B) continue;
+
+          int nclust_B = event_B->GetNcluster();
+          double zVtx_B = event_B->GetVtxZ();
+          float cent_B = event_B->GetCentrality();
+          float bbcq_B = event_B->GetBBCcharge();
+
+          if (nclust_B==0) continue;
+          if (cent_B<0 || cent_B>93) continue;
+          if (bbcq_B>bbcq_cut_val) continue;
+          if (TMath::Abs(zVtx_B)>bbcz_cut_val) continue;
+          if (fabs(cent_A - cent_B) > 5.0) continue;
+          if (fabs(zVtx_A - zVtx_B) > 2.5) continue;
+
+          poold++;
+
+          for (int iclust_B = 0; iclust_B < nclust_B; ++iclust_B)
           {
-            if (poold >= POOLD) break;
-            if (ievent_B >= nevt) break;
+            MyCluster myclust_B = event_B->GetClusterEntry(iclust_B);
 
-            if (event_B) event_B->ClearEvent();
-            br_B->GetEntry(ievent_B);
-            if (!event_B) continue;
+            const unsigned int cluster_mask =
+              get_cluster_mask(myclust_B, -999999, -999998, false);
 
-            int nclust_B = event_B->GetNcluster();
-            double zVtx_B = event_B->GetVtxZ();
-            float cent_B = event_B->GetCentrality();
-            float bbcq_B = event_B->GetBBCcharge();
+            const unsigned int pass_mask = pair_pass_mask & cluster_mask;
+            if (pass_mask == 0u) continue;
 
-            if (nclust_B==0) continue;
-            if (cent_B<0 || cent_B>93) continue;
-            if (bbcq_B>bbcq_cut_val) continue;
-            if (TMath::Abs(zVtx_B)>bbcz_cut_val) continue;
-            if (fabs(cent_A - cent_B) > 5.0) continue;
-            if (fabs(zVtx_A - zVtx_B) > 2.5) continue;
+            float xclust_B = myclust_B.GetX();
+            float yclust_B = myclust_B.GetY();
+            float zclust_B = myclust_B.GetZ()-zVtx_B;
+            double r_B = sqrt(xclust_B*xclust_B + yclust_B*yclust_B + zclust_B*zclust_B);
+            if (r_B <= 0.0) continue;
 
-            poold++;
-
-            for (int iclust_B = 0; iclust_B < nclust_B; ++iclust_B)
+            for (int icfg = 0; icfg < NCFG; ++icfg)
             {
-              MyCluster myclust_B = event_B->GetClusterEntry(iclust_B);
-              float xclust_B = myclust_B.GetX();
-              float yclust_B = myclust_B.GetY();
-              float zclust_B = myclust_B.GetZ()-zVtx_B;
-              float e_B = myclust_B.GetEcore() * cfgs[icfg].escale;
-              float chi2_B = myclust_B.GetChi2();
+              if (!(pass_mask & cfg_bit(icfg))) continue;
 
-              int sector_B = 7 - myclust_B.GetSect();
-              if (!apply_emcmap(sector_B, myclust_B.GetIY(), myclust_B.GetIZ())) continue;
-              if (e_B < cfgs[icfg].ecoreCut) continue;
-              if (chi2_B > cfgs[icfg].chi2Cut) continue;
-
-              double r_B = sqrt(xclust_B*xclust_B + yclust_B*yclust_B + zclust_B*zclust_B);
-              if (r_B <= 0.0) continue;
+              const double e_B = myclust_B.GetEcore() * cfgs[icfg].escale;
 
               TLorentzVector emcPhoton_B;
               emcPhoton_B.Clear();
@@ -989,23 +1162,14 @@ void get_Ntag_uncorr(const char* inFile = "/phenix/plhf/tongzhouguo/taxi/Run12Cu
               pi0_AB = real_convPhoton_AA + emcPhoton_B;
 
               float Mass_AB = pi0_AB.M();
-              //float Pt_pi0_AB = pi0_AB.Pt();
 
               bg2d_eegmass_reco[icfg][icent]->Fill(Mass_AB, Pt_AA, w_pt);
-
-              if (icfg == 1)
-              {
-                bg2d_eegmass_reco_dphi[icent]->Fill(Mass_AB, Pt_AA, w_pt);
-              }
-              if (icfg == 0)
-              {
-                bg2d_eegmass_reco_dzed[icent]->Fill(Mass_AB, Pt_AA, w_pt);
-              }
-            } // End Photon loop Event B
-          } // End Event B loop
-        } // End Track E/P 2 Loop
-      } // End E/P A1 Loop
-    } // End config loop
+              fill_old_eeg_bg_hists(icfg, icent, Mass_AB, Pt_AA, w_pt);
+            }
+          } // End Photon loop Event B
+        } // End Event B loop
+      } // End Track E/P 2 Loop
+    } // End E/P A1 Loop
   } // End Event A loop
 
   write_histograms(output);

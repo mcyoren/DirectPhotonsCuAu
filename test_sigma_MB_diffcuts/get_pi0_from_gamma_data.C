@@ -17,7 +17,7 @@
 #include "/gpfs/mnt/gpfs02/phenix/plhf/plhf1/tongzhouguo/yuri_embed/embed/svx_cent_ana/source/MyEvent.h"
 #include "/gpfs/mnt/gpfs02/phenix/plhf/plhf1/tongzhouguo/yuri_embed/embed/svx_cent_ana/source/Reconstruction.h" 
 //#include "/direct/phenix+u/tongzhouguo/install/include/DileptonAnalysis/MyEvent.h"
-//#include "/direct/phenix+u/tongzhouguo/install/include/Run14AuAuLeptonCombyConstants.h"
+//#include "/direct/phenix+u/tongzhouguo/install/include/Run12AuAuLeptonCombyConstants.h"
 //#include "/direct/phenix+u/tongzhouguo/install/include/embedana.h"
 using namespace std;
 using namespace DileptonAnalysis;
@@ -101,7 +101,7 @@ double getDcenter(double phi1, double z1, double phi2, double z2){
 }
 
 void read_in_emcmap(){
-  ifstream readmap("/phenix/plhf/tongzhouguo/pi02gg/all_209_deadmap.txt");//"/phenix/plhf/mitran/Analysis/Run14AuAuDiLeptonAnalysis/AnaTrain/test/offline1/AnalysisTrain/DileptonAnalysis/Run14AuAuEmcalDeadMap.txt"
+  ifstream readmap("/phenix/plhf/tongzhouguo/pi02gg/all_209_deadmap.txt");//"/phenix/plhf/mitran/Analysis/Run12AuAuDiLeptonAnalysis/AnaTrain/test/offline1/AnalysisTrain/DileptonAnalysis/Run12AuAuEmcalDeadMap.txt"
   for (int i = 0; i < 8; ++i){
     for (int j = 0; j < 48; ++j){
       for (int k = 0; k < 96; ++k){
@@ -211,12 +211,12 @@ bool solution(MyTrack* mytrk1, MyTrack* mytrk2, MyPair* mypair, Reconstruction* 
 
 void get_pi0_from_gamma_data(const char* inFile = "../tong1.root", const char* outFile = "2d_mass_pt_05t.root", const int system = 0, int ert = 0){ 
   //gSystem->Load("/direct/phenix+u/tongzhouguo/install/lib/libDileptonAnalysisEvent");
-  //gSystem->Load("/gpfs/mnt/gpfs02/phenix/plhf/plhf1/tongzhouguo/yuri_embed/embed/work/ee/offline/AnalysisTrain/Run14AuAuLeptonComby/lib/libRun14AuAuLeptonEvent.so");
-  //gSystem->Load("/gpfs/mnt/gpfs02/phenix/plhf/plhf1/tongzhouguo/yuri_embed/embed/work/ee/offline/AnalysisTrain/Run14AuAuLeptonComby/lib/libRun14AuAuLeptonComby.so");
-  //gSystem->Load("/gpfs/mnt/gpfs02/phenix/plhf/plhf1/tongzhouguo/yuri_embed/embed/work/ee/offline/AnalysisTrain/Run14AuAuLeptonComby/lib/libRun14AuAuLeptonConvReco.so");
-  gSystem->Load("/direct/phenix+u/tongzhouguo/install/lib/libRun14AuAuLeptonEvent.so");
+  //gSystem->Load("/gpfs/mnt/gpfs02/phenix/plhf/plhf1/tongzhouguo/yuri_embed/embed/work/ee/offline/AnalysisTrain/Run12AuAuLeptonComby/lib/libRun12AuAuLeptonEvent.so");
+  //gSystem->Load("/gpfs/mnt/gpfs02/phenix/plhf/plhf1/tongzhouguo/yuri_embed/embed/work/ee/offline/AnalysisTrain/Run12AuAuLeptonComby/lib/libRun12AuAuLeptonComby.so");
+  //gSystem->Load("/gpfs/mnt/gpfs02/phenix/plhf/plhf1/tongzhouguo/yuri_embed/embed/work/ee/offline/AnalysisTrain/Run12AuAuLeptonComby/lib/libRun12AuAuLeptonConvReco.so");
+  gSystem->Load("/direct/phenix+u/tongzhouguo/install/lib/libRun12AuAuLeptonEvent.so");
   gSystem->Load("/direct/phenix+u/tongzhouguo/install/lib/libsvxcentana.so");
-  gSystem->Load("/direct/phenix+u/tongzhouguo/install/lib/libRun14AuAuLeptonConvReco.so");
+  gSystem->Load("/direct/phenix+u/tongzhouguo/install/lib/libRun12AuAuLeptonConvReco.so");
   Reconstruction reco("/gpfs/mnt/gpfs02/phenix/plhf/plhf1/tongzhouguo/yuri_embed/embed/analysis/emb/lookup_3D_one_phi.root");
 
 
