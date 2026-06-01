@@ -173,7 +173,7 @@ double getDcenter(double phi1, double z1, double phi2, double z2)
 
 void read_in_emcmap()
 {
-  ifstream readmap("/phenix/plhf/tongzhouguo/pi02gg/209_deadmap.txt");
+  ifstream readmap("/phenix/plhf/mitran/Analysis/Run14AuAuDiLeptonAnalysis/AnaTrain/test/offline1/AnalysisTrain/DileptonAnalysis/Run14AuAuEmcalDeadMap.txt");////"/phenix/plhf/tongzhouguo/pi02gg/209_deadmap.txt"
   for (int i = 0; i < 8; ++i)
   {
     for (int j = 0; j < 48; ++j)
@@ -212,6 +212,19 @@ bool apply_emcmap(int sect, int y, int z)
   return true;
 }
 
+
+double track_p(MyTrack* mytrk)
+{
+  return sqrt(mytrk->GetPx()*mytrk->GetPx() +
+              mytrk->GetPy()*mytrk->GetPy() +
+              mytrk->GetPz()*mytrk->GetPz());
+}
+
+double track_pt(MyTrack* mytrk)
+{
+  return track_p(mytrk) * sin(mytrk->GetThe0());
+}
+
 // Base track quality from original single_cut, but without pt/eid.
 // Config-specific pt/eid are applied in pass_eid().
 bool pass_base_track(MyTrack* mytrk)
@@ -231,6 +244,9 @@ bool pass_base_track(MyTrack* mytrk)
   bool dead_area = DCdeadArea(_alpha, _phi, _board, _zed);
   if (dead_area) return false;
 
+  double _pt = track_pt(mytrk);
+  if (_pt < 0.2) return false;
+
   int _charge = mytrk->GetCharge();
   if (fabs((double)_charge) != 1.0) return false;
 
@@ -241,18 +257,6 @@ bool pass_base_track(MyTrack* mytrk)
   if (fabs(_emcdphi) > 0.05) return false;
 
   return true;
-}
-
-double track_p(MyTrack* mytrk)
-{
-  return sqrt(mytrk->GetPx()*mytrk->GetPx() +
-              mytrk->GetPy()*mytrk->GetPy() +
-              mytrk->GetPz()*mytrk->GetPz());
-}
-
-double track_pt(MyTrack* mytrk)
-{
-  return track_p(mytrk) * sin(mytrk->GetThe0());
 }
 
 // EID definitions requested.
@@ -816,8 +820,8 @@ void get_Ntag_uncorr(const char* inFile = "/phenix/plhf/tongzhouguo/taxi/Run12Cu
     h_nevents->Fill(2);
     if (TMath::Abs(zVtx_A)>bbcz_cut_val) continue;
     h_nevents->Fill(3);
-    if (bbcq_A>bbcq_cut_val) continue;
-    h_nevents->Fill(4);
+    //if (bbcq_A>bbcq_cut_val) continue;
+    //h_nevents->Fill(4);
 
     int icent = get_cent_bin(cent_A);
     if (icent < 0 || icent >= centbin) continue;
@@ -1056,7 +1060,7 @@ void get_Ntag_uncorr(const char* inFile = "/phenix/plhf/tongzhouguo/taxi/Run12Cu
         for (int iclust_A = 0; iclust_A < nclust_A; ++iclust_A)
         {
           MyCluster myclust_A = event_A->GetClusterEntry(iclust_A);
-
+          if(myclust_A.GetEcore() < 0.3) continue;
           const unsigned int cluster_mask =
             get_cluster_mask(myclust_A, emcid_A1, emcid_A2, true);
 

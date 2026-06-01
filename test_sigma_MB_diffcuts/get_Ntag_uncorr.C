@@ -44,7 +44,7 @@ const double N0_CUT[cutbin] = {2.0, 3.0, 3.0};
 const double EMCDZ_CUT[cutbin] = {20.0, 15.0, 10.0};
 const double EMCDPHI_CUT[cutbin] = {0.05, 0.04, 0.03};
 
-float ecore_cut = 0.3;
+float ecore_cut = 0.4;
 float chi2_cut = 3.0;
 double bbcz_cut_val = 10;
 const double bbcq_cut_val = 1800;
@@ -205,7 +205,7 @@ bool solution(MyTrack *mytrk1, MyTrack *mytrk2, MyPair *mypair, Reconstruction *
   return true;
 }
 
-void get_Ntag_uncorr(int num = 100, const char *inFile = "/phenix/plhf/tongzhouguo/test_tree2/trees", const char *outFile = "sim_2d_03.root", const int system = 0, int iter = 0)
+void get_Ntag_uncorr(int num = 100, const char *inFile = "/phenix/plhf/tongzhouguo/test_tree2/trees", const char *outFile = "sim_2d_04.root", const int system = 0, int iter = 0)
 {
 
   gSystem->Load("/direct/phenix+u/tongzhouguo/install/lib/libDileptonAnalysisEvent");
