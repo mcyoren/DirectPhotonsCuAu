@@ -27,8 +27,9 @@ const float ncoll[] = {
   129.0,
   41.8,
   10.1,
-  3.6   // estimated from MB 0-93 closure
+  2.28   // estimated from MB 0-93 closure
 };
+
 
 const float mee_min = 0.01, mee_max = 0.12;
 
@@ -83,7 +84,7 @@ const int centbin = 5;
 const int sectbin = 1;
 const int Sectbin = 8;
 const double PC1_DPHI_CUT = 0.02, PC1_DZ_CUT = 0.5;
-float ecore_cut = 0.5;
+float ecore_cut = 0.4;
 float chi2_cut = 3.0;
 
 TH1F* hpT_pi0[centbin];
@@ -209,7 +210,7 @@ bool solution(MyTrack* mytrk1, MyTrack* mytrk2, MyPair* mypair, Reconstruction* 
 
 
 
-void get_pi0_from_gamma_data(const char* inFile = "../tong1.root", const char* outFile = "2d_mass_pt_05t.root", const int system = 0, int ert = 0){ 
+void get_pi0_from_gamma_data(const char* inFile = "../tong1.root", const char* outFile = "2d_mass_pt_04new.root", const int system = 0, int ert = 0){ 
   //gSystem->Load("/direct/phenix+u/tongzhouguo/install/lib/libDileptonAnalysisEvent");
   //gSystem->Load("/gpfs/mnt/gpfs02/phenix/plhf/plhf1/tongzhouguo/yuri_embed/embed/work/ee/offline/AnalysisTrain/Run14AuAuLeptonComby/lib/libRun14AuAuLeptonEvent.so");
   //gSystem->Load("/gpfs/mnt/gpfs02/phenix/plhf/plhf1/tongzhouguo/yuri_embed/embed/work/ee/offline/AnalysisTrain/Run14AuAuLeptonComby/lib/libRun14AuAuLeptonComby.so");
