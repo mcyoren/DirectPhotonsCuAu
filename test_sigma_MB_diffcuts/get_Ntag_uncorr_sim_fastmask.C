@@ -393,12 +393,12 @@ ClusterInfo make_cluster_info(MyCluster& cl, TF1& f_rand)
   double ecore = cl.GetEcore();
   if (ecore <= 0.0) return ci;
 
-  const double resolution = sqrt(pow(smear_c1[ci.sector], 2) +
-                                 pow(smear_c2[ci.sector] / sqrt(ecore), 2));
-  const double e_smear = scale[ci.sector] * (1.0 + f_rand.GetRandom() * resolution);
-  ci.e_smeared_base = ecore * e_smear;
-  if (ci.e_smeared_base <= 0.0) return ci;
-
+  //const double resolution = sqrt(pow(smear_c1[ci.sector], 2) +
+  //                               pow(smear_c2[ci.sector] / sqrt(ecore), 2));
+  //const double e_smear = scale[ci.sector] * (1.0 + f_rand.GetRandom() * resolution);
+  //ci.e_smeared_base = ecore * e_smear;
+  //if (ci.e_smeared_base <= 0.0) return ci;
+  ci.e_smeared_base = ecore;
   ci.ok_geom = true;
   return ci;
 }
@@ -532,7 +532,7 @@ void write_histograms_sim(TFile* output)
 }
 
 void get_Ntag_uncorr_sim_fastmask(int num = 100,
-                         const char *inFile = "/phenix/plhf/tongzhouguo/test_tree2/trees",
+                         const char *inFile = "/phenix/plhf/tongzhouguo/test_tree2/1_tree",
                          const char *outFile = "sim_fastmask.root",
                          const int system = 0,
                          int iter = 0)
@@ -562,7 +562,7 @@ void get_Ntag_uncorr_sim_fastmask(int num = 100,
     delete fHagedorn;
     return;
   }
-  //
+  ///direct/phenix+u/roli/scratch/HELIOS/simulation/singlePi0.root
   TFile *helios = TFile::Open("/direct/phenix+u/roli/scratch/HELIOS/simulation/singlePi0.root", "READ");///phenix/plhf/roli/HELIOS/simulation/singlePi0.root
   if (!helios || helios->IsZombie())
   {
@@ -785,9 +785,6 @@ void get_Ntag_uncorr_sim_fastmask(int num = 100,
           const unsigned int pair_mask = common_track_mask & conv_mask;
           if (pair_mask == 0u) continue;
 
-          //checking solution() 
-          if (!solution(&mytrk_A1, &mytrk_A2)) continue;
-
           const double momx_A2 = pt_A2 * cos(phi_A2);
           const double momy_A2 = pt_A2 * sin(phi_A2);
           const double momz_A2 = pt_A2 / tan(the_A2);
@@ -828,7 +825,7 @@ void get_Ntag_uncorr_sim_fastmask(int num = 100,
             const unsigned int pass_mask = pair_mask & cl_mask;
             if (pass_mask == 0u) continue;
 
-            const double r_A = sqrt(ci.x*ci.x + ci.y*ci.y + ci.z*ci.z);
+            const double r_A = sqrt(ci.x*ci.x + ci.y*ci.y + (ci.z-zVtx_A)*(ci.z-zVtx_A));
             if (r_A <= 0.0) continue;
 
             for (int icfg = 0; icfg < NCFG; ++icfg)
@@ -840,7 +837,7 @@ void get_Ntag_uncorr_sim_fastmask(int num = 100,
               TLorentzVector emcPhoton_A;
               emcPhoton_A.SetPxPyPzE(e_A * ci.x / r_A,
                                      e_A * ci.y / r_A,
-                                     e_A * ci.z / r_A,
+                                     e_A * (ci.z-zVtx_A) / r_A,
                                      e_A);
 
               TLorentzVector pi0_AA = real_convPhoton_AA + emcPhoton_A;
