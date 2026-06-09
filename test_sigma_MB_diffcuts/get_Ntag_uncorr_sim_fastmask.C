@@ -75,17 +75,30 @@ double bbcz_cut_val = 10.0;
 const double bbcq_cut_val = 1800.0;
 
 // Photon scale/smear arrays from the original sim macro.
+//const double scale[8] = {
+//    0.988, 0.990, 0.985, 0.981,
+//    0.980, 0.985, 1.025, 1.023};
+//
+//const double smear_c1[8] = {
+//    0.055, 0.066, 0.055, 0.059,
+//    0.057, 0.056, 0.072, 0.072};
+//
+//const double smear_c2[8] = {
+//    0.011, 0.017, 0.011, 0.013,
+//    0.012, 0.012, 0.063, 0.062};
+
 const double scale[8] = {
-    0.988, 0.990, 0.985, 0.981,
-    0.980, 0.985, 1.025, 1.023};
+    0.98, 0.99, 0.97, 0.97,
+    0.98, 0.97, 1.03, 1.02};
 
 const double smear_c1[8] = {
-    0.055, 0.066, 0.055, 0.059,
-    0.057, 0.056, 0.072, 0.072};
+    0.044, 0.051, 0.057, 0.054,
+    0.042, 0.048, 0.104, 0.112};
 
 const double smear_c2[8] = {
-    0.011, 0.017, 0.011, 0.013,
-    0.012, 0.012, 0.063, 0.062};
+    0.,0.,0.,0.,
+    0.,0.,0.,0.};
+
 
 // Conversion config types, same names as data.
 enum ConvType
@@ -156,7 +169,7 @@ double getDcenter(double phi1, double z1, double phi2, double z2)
 
 void read_in_emcmap()
 {
-  ifstream readmap("/phenix/plhf/mitran/Analysis/Run14AuAuDiLeptonAnalysis/AnaTrain/test/offline1/AnalysisTrain/DileptonAnalysis/Run14AuAuEmcalDeadMap.txt");////"/phenix/plhf/tongzhouguo/pi02gg/all_209_deadmap.txt"
+  ifstream readmap("/phenix/plhf/tongzhouguo/pi02gg/all_209_deadmap.txt");////"/phenix/plhf/mitran/Analysis/Run14AuAuDiLeptonAnalysis/AnaTrain/test/offline1/AnalysisTrain/DileptonAnalysis/Run14AuAuEmcalDeadMap.txt"
   for (int i = 0; i < 8; ++i)
   {
     for (int j = 0; j < 48; ++j)
@@ -549,8 +562,8 @@ void get_Ntag_uncorr_sim_fastmask(int num = 100,
     delete fHagedorn;
     return;
   }
-
-  TFile *helios = TFile::Open("/direct/phenix+u/roli/scratch/HELIOS/simulation/singlePi0.root", "READ");
+  //
+  TFile *helios = TFile::Open("/direct/phenix+u/roli/scratch/HELIOS/simulation/singlePi0.root", "READ");///phenix/plhf/roli/HELIOS/simulation/singlePi0.root
   if (!helios || helios->IsZombie())
   {
     cout << "Cannot open HELIOS file" << endl;
@@ -771,6 +784,9 @@ void get_Ntag_uncorr_sim_fastmask(int num = 100,
           const unsigned int conv_mask = get_conv_mask_sim(dzed);
           const unsigned int pair_mask = common_track_mask & conv_mask;
           if (pair_mask == 0u) continue;
+
+          //checking solution() 
+          if (!solution(&mytrk_A1, &mytrk_A2)) continue;
 
           const double momx_A2 = pt_A2 * cos(phi_A2);
           const double momy_A2 = pt_A2 * sin(phi_A2);

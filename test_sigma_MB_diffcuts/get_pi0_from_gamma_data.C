@@ -27,9 +27,8 @@ const float ncoll[] = {
   129.0,
   41.8,
   10.1,
-  2.28   // estimated from MB 0-93 closure
+  2.4   // estimated from MB 0-93 closure
 };
-
 
 const float mee_min = 0.01, mee_max = 0.12;
 
@@ -84,7 +83,7 @@ const int centbin = 5;
 const int sectbin = 1;
 const int Sectbin = 8;
 const double PC1_DPHI_CUT = 0.02, PC1_DZ_CUT = 0.5;
-float ecore_cut = 0.4;
+float ecore_cut = 0.5;
 float chi2_cut = 3.0;
 
 TH1F* hpT_pi0[centbin];
@@ -397,7 +396,7 @@ void get_pi0_from_gamma_data(const char* inFile = "../tong1.root", const char* o
           TLorentzVector convPhoton_AA;
           convPhoton_AA.Clear();
           convPhoton_AA = p_A1_DC + p_A2_DC;
-          float Pt_AA = convPhoton_AA.Pt();
+          //float Pt_AA = convPhoton_AA.Pt();
 
           TLorentzVector real_convPhoton_AA;
           real_convPhoton_AA.Clear();
@@ -405,7 +404,7 @@ void get_pi0_from_gamma_data(const char* inFile = "../tong1.root", const char* o
           real_convPhoton_AA.SetPy(momy_A1+momy_A2);
           real_convPhoton_AA.SetPz(momz_A1+momz_A2);
           real_convPhoton_AA.SetE(sqrt(pow(convPhoton_AA.P(),2)));
-          float Pt_AA_real = real_convPhoton_AA.Pt();
+          float Pt_AA = real_convPhoton_AA.Pt();
 
           eemass[icut][cent_A][0]->Fill(convPhoton_AA.M(), Pt_AA, w_pt_tr);
           eemass_unw[icut][cent_A][0]->Fill(convPhoton_AA.M(), Pt_AA);
