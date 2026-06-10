@@ -393,11 +393,11 @@ ClusterInfo make_cluster_info(MyCluster& cl, TF1& f_rand)
   double ecore = cl.GetEcore();
   if (ecore <= 0.0) return ci;
 
-  //const double resolution = sqrt(pow(smear_c1[ci.sector], 2) +
-  //                               pow(smear_c2[ci.sector] / sqrt(ecore), 2));
-  //const double e_smear = scale[ci.sector] * (1.0 + f_rand.GetRandom() * resolution);
-  //ci.e_smeared_base = ecore * e_smear;
-  //if (ci.e_smeared_base <= 0.0) return ci;
+  const double resolution = sqrt(pow(smear_c1[ci.sector], 2) +
+                                 pow(smear_c2[ci.sector] / sqrt(ecore), 2));
+  const double e_smear = scale[ci.sector] * (1.0 + f_rand.GetRandom() * resolution);
+  ci.e_smeared_base = ecore * e_smear;
+  if (ci.e_smeared_base <= 0.3) return ci;
   ci.e_smeared_base = ecore;
   ci.ok_geom = true;
   return ci;
@@ -532,9 +532,9 @@ void write_histograms_sim(TFile* output)
 }
 
 void get_Ntag_uncorr_sim_fastmask(int num = 100,
-                         const char *inFile = "/phenix/plhf/tongzhouguo/test_tree2/1_tree",
-                         const char *outFile = "sim_fastmask.root",
                          const int system = 0,
+                         const char *inFile = "/phenix/plhf/tongzhouguo",
+                         const char *outFile0 = "sim_fastmask",
                          int iter = 0)
 {
   TH1::AddDirectory(kFALSE);
@@ -554,7 +554,10 @@ void get_Ntag_uncorr_sim_fastmask(int num = 100,
   fHagedorn->SetParameters(1.922170e+02, 2.106180e+00, 1.284030e+01, 1.630000e+01, 8.060480e+00, 4.033000e+00, 6.395340e-02);
   fHagedorn->SetNpx(10000);
 
+  TString outFile = Form("%s_%d.root", outFile0, system);
+  std::cout << "output file: " << outFile << std::endl;
   TFile *output = TFile::Open(outFile, "RECREATE");
+  
   if (!output || output->IsZombie())
   {
     cout << "Cannot open output file: " << outFile << endl;
@@ -627,7 +630,7 @@ void get_Ntag_uncorr_sim_fastmask(int num = 100,
 
   for (int iFile = 0; iFile < num; iFile++)
   {
-    const TString inFile0 = Form("%s/sim_trees_%05d.root", inFile, iFile);
+    const TString inFile0 = Form("%s/test_tree%d/1_tree/sim_trees_%05d.root", inFile, system, iFile);
 
     TFile *input_A = TFile::Open(inFile0, "READ");
     if (!input_A || input_A->IsZombie())
@@ -689,7 +692,7 @@ void get_Ntag_uncorr_sim_fastmask(int num = 100,
         }
       }
 
-      if (pion.Pt() > 10) continue;
+      //if (pion.Pt() > 10) continue;
 
       w_pt = fHagedorn->Eval(pion.Pt());
       for (int i = 0; i < iter; i++)
