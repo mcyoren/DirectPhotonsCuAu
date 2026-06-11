@@ -1,0 +1,377 @@
+\documentclass[10pt, dvipsnames]{beamer}
+
+\usecolortheme{dove}
+\usetheme{boxes}
+
+\setbeamercolor{footline}{fg=black}
+\setbeamerfont{footline}{series=\bfseries}
+
+\usepackage[utf8]{inputenc}
+
+\usepackage{hyperref}
+\usepackage{enumerate}
+\usepackage{subcaption}
+\usepackage{graphicx}
+\usepackage{animate}
+\usepackage{hyperref}
+\usepackage{mathtools}
+\usepackage{amsmath}
+\usepackage{indentfirst}
+\usepackage{xspace}
+\usepackage{tcolorbox}
+
+\beamertemplatenavigationsymbolsempty
+
+% ---------- Bibliography (biblatex+biber) ----------
+\usepackage[
+  backend=biber,
+  style=phys,        % if missing on TeX Live 2022, use style=numeric
+  sorting=ydnt,      % year (desc), name, title
+  maxbibnames=3,     % short author lists for CV
+  minbibnames=1,
+  giveninits=true,   % initials instead of full given names
+  defernumbers=true, % number only printed entries (no gaps)
+  doi=true,
+  url=false,         % hide URLs if DOIs present
+  eprint=true
+]{biblatex}
+
+\date{\textcolor{gray}{2026}}
+
+\setbeamertemplate{footline}{
+{%
+   \hspace{.95cm} \begin{minipage}{0.1\paperwidth} \insertdate \hfill \break \end{minipage} \hfill 
+   \includegraphics[width=0.14\textwidth]{logos/phenix_small.pdf} 
+   \hfill \begin{minipage}{0.045\paperwidth} \textcolor{gray}{\insertframenumber/\inserttotalframenumber} \hfill \break \end{minipage} \unskip \hspace{0.95cm}
+   \vfill
+}}
+
+\setbeamertemplate{frametitle}[default][center]
+\setbeamerfont{frametitle}{series=\bfseries}
+
+\setbeamertemplate{caption}[numbered]
+
+\AtBeginPart{\frame{\partpage}}
+
+\input{defs.tex}
+
+\begin{document}
+
+\begin{frame}{PHENIX Preliminary Data Request \\ Low-$p_T$ Direct Photons}
+   Name: Tongzhou Guo, A. Drees, M. Mitrankova\break
+   PWG: Heavy Ion, Photon, PLHF\break
+   What Observable: low-$p_T$ direct photon production using the external conversion method; $R_\gamma$, direct photon invariant yield, and integrated direct photon yield\break
+   System, Energy, Run: Run-12 Cu$+$Au at $\sqrt{s_{NN}}=200$ GeV\break
+   Last PWG Presentation Link:\break
+   \textcolor{RoyalBlue}{\url{https://phenix-intra.sdcc.bnl.gov/cdsagenda/fullAgenda.php?ida=a2626}}\break
+   Analysis Note: an1525 \break
+   Analysis Note Web Link:\break
+   \textcolor{RoyalBlue}{\url{https://phenix-intra.sdcc.bnl.gov/phenix/WWW/p/draft/tongzhouguo/Direct_photon_production_Cu_Au_v1.pdf}}\break
+\end{frame}
+
+\begin{frame}{Plots requested for preliminary status}
+   \scriptsize
+   \begin{itemize}
+   \item[$\bullet$] $R_\gamma$ in Cu$+$Au minimum bias compared with PHENIX Au$+$Au 40--50\%.
+   \item[$\bullet$] $R_\gamma$ in Cu$+$Au minimum bias compared with PHENIX Au$+$Au 50--60\%, 40--50\%, and 30--40\%.
+   \item[$\bullet$] Direct photon invariant yield in Cu$+$Au minimum bias compared with PHENIX Au$+$Au 40--50\%.
+   \item[$\bullet$] Integrated direct photon yield $dN_{\gamma}^{\rm dir}/dy$ for $1<p_T<5$ GeV/$c$ versus $dN_{\rm ch}/d\eta$.
+   \end{itemize}
+
+   \vspace{0.1em}
+
+   \begin{center}
+   \begin{tabular}{cc}
+   \includegraphics[width=0.38\textwidth]{Pictures/rgamma_stat_syst0.png}
+   &
+   \includegraphics[width=0.38\textwidth]{Pictures/rgamma_stat_syst1.png}
+   \\
+   \includegraphics[width=0.38\textwidth]{Pictures/spectrum_stat_syst.png}
+   &
+   \includegraphics[width=0.38\textwidth]{Pictures/dndy_vs_dNch.png}
+   \end{tabular}
+   \end{center}
+\end{frame}
+
+
+\begin{frame}{Basic Information \& Provenance}
+\textbf{Data set:} \\
+Run-12 Cu$+$Au at $\sqrt{s_{NN}}=200$ GeV, minimum-bias data sample \\
+\vspace{0.4em}
+
+\textbf{Data provenance and reconstruction:} \\
+CNT, DST\_EVE, pro99 \\
+\vspace{0.4em}
+
+\textbf{Analysis code location:} \\
+\texttt{offline/AnalysisTrain/DileptonAnalysis/} \\
+\texttt{offline/AnalysisTrain/pat/macro/Run\_DileptonAnalysis\_CuAu.C} \\
+\vspace{0.4em}
+
+\textbf{Please list all recalibrators used in this analysis:} \\
+BeamOffset, MomScale, EMCal \\
+\vspace{0.4em}
+
+\textbf{Were any of these not in the MasterRecalibrator?} \\
+No \\
+\vspace{0.4em}
+
+\textbf{Basic analysis cuts used:} next slide
+\end{frame}
+
+
+\begin{frame}{Basic Analysis Cuts}
+   \small
+   The nominal cut definitions are taken from the analysis note.  The main selections are:
+   \begin{itemize}
+      \item Event selection: BBCLL1($>1$ tubes)\_narrowvtx trigger and $|z_{\rm vtx}|<10$ cm.
+      \item Charged tracks: quality $=31|51|63$, $|zed|<75$ cm, and $p_T>0.3$ GeV/$c$.
+      \item Electron ID: RICH requirement $n_0\geq 2$, EMCal matching $|emcdz|<20$ cm and $|emcd\varphi|<0.05$ rad, and $E/p>0.6$ requirement.
+      \item EMCal photon candidates: cluster $E_{\rm core}$ threshold, shower-shape requirement $\chi^2<3$, EMCal dead maps, and an electron/positron veto.
+      \item Conversion pairs: external conversion-pair cuts based on variables such as $dzed<4$ cm, $1<r_{\rm conv}<29$ cm.
+   \end{itemize}
+   \vspace{0.4em}
+   The systematic study repeats the extraction with controlled variations of these selections, including conversion-pair cuts, electron ID, electron-track momentum threshold, photon threshold, shower shape, energy scale, and $\pi^0$ peak extraction.
+\end{frame}
+\begin{frame}{What's the observable}
+   \textbf{What observable is analyzed?}
+   \begin{itemize}
+      \item[$\bullet$] Low-$p_T$ direct photons in Cu$+$Au minbias at $\sqrt{s_{NN}}=200$ GeV
+      \item[$\bullet$] Direct photon double ratio $R_\gamma$
+      \item[$\bullet$] Direct photon invariant yield
+      \item[$\bullet$] Integrated direct photon yield $dN_{\gamma}^{\rm dir}/dy$ for $1<p_T<5$ GeV/$c$
+   \end{itemize}
+
+   \textbf{What will be plotted?}
+   \small
+   \begin{itemize}
+      \item[$\bullet$] $R_\gamma$ in 093 Cu$+$Au compared to PHENIX Au$+$Au 40--50\% from PPG243
+      \item[$\bullet$] $R_\gamma$ in 093 Cu$+$Au compared to PHENIX Au$+$Au 50--60\%, 40--50\%, and 30--40\% from PPG243
+      \item[$\bullet$] Direct photon invariant yield in Cu$+$Au minimum bias compared to PHENIX Au$+$Au 40--50\%
+      \item[$\bullet$] Integrated direct photon yield $dN_{\gamma}^{\rm dir}/dy$ vs. $dN_{\rm ch}/d\eta$ compared to PHENIX and ALICE measurements
+   \end{itemize}
+
+   \textbf{What's new about this result?}
+   \begin{itemize}
+      \item[$\bullet$] First low-$p_T$ direct photon result in Run-12 Cu$+$Au collisions 
+   \end{itemize}
+
+   \textbf{What is the question that this new result will answer?}
+   \begin{itemize}
+      \item[$\bullet$] Whether Cu$+$Au direct photon production follows the same trend with $dN_{\rm ch}/d\eta$ as Au$+$Au, Cu$+$Cu, and Pb$+$Pb systems
+   \end{itemize}
+\end{frame}
+
+\begin{frame}{Outline of the analysis method}
+\begin{itemize}
+\item[$\bullet$] If you use an established analysis method that was previously used in PHENIX published paper(s), please list the PHENIX paper(s) that uses the same method: PPG243
+
+  \begin{minipage}{0.58\textwidth}
+  \item[$\bullet$] If the method is used in previously approved preliminary results, please give the information on the approval, i.e., when approved and some of the approved plot:
+  \begin{itemize}
+      \item Au$+$Au direct photons using the external conversion method
+      \item Preliminary granted to Wenqing Fan on 2019-10-28
+      \item Supporting analysis note: an1417
+  \end{itemize}
+  \end{minipage}
+  \begin{minipage}{0.34\textwidth}
+     \centering
+     \includegraphics[width=\textwidth]{Pictures/wenqing.pdf}
+  \end{minipage}
+
+  \item[$\bullet$] In both cases, please show that this established method worked well in the current data set: the Cu$+$Au $R_\gamma$ and direct photon spectrum are consistent with the Au$+$Au 40--50\% result from PPG243, which has comparable charged-particle multiplicity
+
+  \item[$\bullet$] If you modified an established method, please highlight the modification you made: none
+
+
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Outline of the analysis method}
+   \small
+   The direct photon double ratio is measured as
+   \begin{equation*}
+      R_\gamma = \frac{\gamma^{\rm inclusive}}{\gamma^{\rm decay}}
+      \approx
+      \frac{
+      \left\langle\varepsilon_\gamma f\right\rangle
+      \left(N_{\rm incl}/N_{\rm tag}\right)_{\rm data}
+      }{
+      \left(\gamma^{h}/\gamma^{\pi^0}\right)_{\rm MC}
+      } .
+   \end{equation*}
+   \begin{itemize}
+      \item $N_{\rm incl}$ is the inclusive conversion-photon yield from the $M_{e^+e^-}$ distribution.
+      \item $N_{\rm tag}$ is obtained by combining a conversion photon with an EMCal photon and extracting the $\pi^0$ peak in $M_{e^+e^-\gamma}$.
+      \item $\left\langle\varepsilon_\gamma f\right\rangle$ is the probability to tag the partner photon from a $\pi^0$ decay, evaluated with simulation and occupancy correction.
+      \item $\gamma^h/\gamma^{\pi^0}$ is the decay-photon cocktail correction from HELIOS.
+   \end{itemize}
+\end{frame}
+
+\begin{frame}{Extraction of $N_{\rm incl}$ and $N_{\rm tag}$}
+   \small
+   \begin{columns}[T,onlytextwidth]
+      \column{0.50\textwidth}
+      \textbf{Inclusive conversion yield}
+      \begin{itemize}
+         \item Reconstruct external conversions, $\gamma\rightarrow e^+e^-$.
+         \item Extract $N_{\rm incl}$ from the $M_{e^+e^-}$ distribution after background subtraction.
+         \item The conversion mass shape is shifted because the tracks are reconstructed assuming the event vertex, while the conversion occurs in detector material at finite radius.
+      \end{itemize}
+      \column{0.50\textwidth}
+      \textbf{Tagged $\pi^0$ yield}
+      \begin{itemize}
+         \item Combine the conversion photon with EMCal photon candidates.
+         \item Extract the $\pi^0$ signal from the $M_{e^+e^-\gamma}$ distribution.
+         \item Mixed-event background is normalized outside the $\pi^0$ peak and subtracted.
+         \item Residual background is described by a polynomial under the $\pi^0$ peak.
+      \end{itemize}
+   \end{columns}
+   \vspace{0.4em}
+   The nominal $\pi^0$ extraction uses a Gaussian signal plus a second-order polynomial residual background.  Variations of the integration window, fit range, and polynomial order are included in the systematic uncertainty.
+\end{frame}
+
+   \begin{frame}{Systematic uncertainties}
+   \small
+   Systematic uncertainties are evaluated by repeating the full extraction for physically motivated cut and fit variations.  Variations are grouped by source:
+   \begin{itemize}
+      \item conversion-pair selection;
+      \item electron identification;
+      \item electron-track momentum threshold;
+      \item EMCal photon $E_{\rm core}$ threshold;
+      \item EMCal shower-shape requirement;
+      \item photon energy scale;
+      \item $\pi^0$ peak extraction.
+   \end{itemize}
+   \vspace{0.4em}
+   The systematic uncertainty is evaluated group-by-group from the spread of the variation relative to the nominal result.  The final band uses asymmetric up/down uncertainties with a baseline lower bound to avoid underestimates from statistical fluctuations in individual variation points.
+\end{frame}
+
+% Efficiency and $R_\gamma$ for all cuts plot to show evidence of underlying physics in the analysis.
+\begin{frame}{Efficiency and $R_\gamma$ for all cuts}
+   \centering
+   \begin{columns}
+
+      \column{0.50\textwidth}
+      \includegraphics[width=0.99\textwidth, trim=0 0 0 0.1cm, clip]{Pictures/ef_configs.png}
+      \column{0.50\textwidth}
+      \includegraphics[width=0.99\textwidth, trim=0 0 0 0.1cm, clip]{Pictures/rgamma_all_configs.png}
+   \end{columns}
+   \begin{itemize}
+      \item There are clear trends in the efficiency as a function of the applied cuts.
+      \item $R_\gamma$ shows no dependence on the applied cuts and counting windows.
+      \item $R_\gamma$ agrees with 40-50\% Au+Au results at similar multiplicity to minimum bias Cu+Au.
+   \end{itemize}
+\end{frame}
+
+
+
+\begin{frame}{Analysis Issues}
+   \textbf{What were the main issues of the analysis?} \break
+   \begin{itemize}
+      \item[$\bullet$] The earlier $R_\gamma$ result was too flat as a function of $p_T$
+      \item[$\bullet$] At high $p_T$, the simulated $\pi^0$ peak was too narrow because of the simulation vertex treatment, which caused a loss of tagging efficiency
+      \item[$\bullet$] At low $p_T$, the ${n_{cluster} == 0}$ rejection removed inclusive conversion photons without a corresponding tagged photon contribution
+      \item[$\bullet$] This made $\langle\varepsilon_\gamma f\rangle = N_{\rm tag}/N_{\rm incl}$ too large at low $p_T$
+   \end{itemize}
+
+   \textbf{What concerns were raised in PWG meetings?}
+   \begin{itemize}
+      %\item[$\bullet$] Stability of the tagging efficiency correction
+      \item[$\bullet$] Shape of $R_\gamma$ compared to the Au$+$Au reference
+      \item[$\bullet$] Treatment of systematic uncertainties
+   \end{itemize}
+
+   \textbf{What was the resolution for these issues?}
+   \begin{itemize}
+      \item[$\bullet$] Corrected the simulation vertex treatment, improving the high-$p_T$ $\pi^0$ peak and tagging efficiency
+      \item[$\bullet$] Removed the ${n_{cluster} == 0}$ rejection to avoid losing inclusive photons at low $p_T$
+      \item[$\bullet$] Re-evaluated $N_{\rm incl}$, $N_{\rm tag}$, $\langle\varepsilon_\gamma f\rangle$, $R_\gamma$, and the direct photon spectrum
+      \item[$\bullet$] Estimated systematics by varying conversion cuts, electron ID, photon cuts, energy scale, and $\pi^0$ extraction settings
+   \end{itemize}
+\end{frame}
+
+\begin{frame}{Relations to Previous Analyses}
+   \textbf{Previously published PHENIX results for the same observable:}
+   \begin{itemize}
+      \item[$\bullet$] No published PHENIX Cu$+$Au direct photon result with the external conversion method
+   \end{itemize}
+
+   \textbf{Previously published PHENIX results with a similar observable and method:}
+   \begin{itemize}
+      \item[$\bullet$] PHENIX Au$+$Au direct photon measurement using the external conversion method
+   \end{itemize}
+
+   \begin{center}
+      \includegraphics[width=0.45\textwidth]{Pictures/wenqing.pdf}
+   \end{center}
+
+   \textbf{Previously published non-PHENIX results for similar observables:}
+   \begin{itemize}
+      \item[$\bullet$] Yes, STAR and ALICE have published related direct photon measurements
+   \end{itemize}
+\end{frame}
+
+
+
+\begin{frame}{Plots Requested for PHENIX Preliminary: $R_\gamma$}
+   \centering
+   \includegraphics[width=0.78\textwidth]{Pictures/rgamma_stat_syst0.png}
+   \vspace{0.2em}
+
+   \small Cu$+$Au minimum-bias $R_\gamma$ compared with the PHENIX Au$+$Au 40--50\% reference from PPG243.
+\end{frame}
+
+\begin{frame}{Plots Requested for PHENIX Preliminary: $R_\gamma$ multiplicity comparison}
+   \centering
+   \includegraphics[width=0.78\textwidth]{Pictures/rgamma_stat_syst1.png}
+   \vspace{0.2em}
+
+   \small Cu$+$Au minimum-bias $R_\gamma$ compared with PHENIX Au$+$Au 50--60\%, 40--50\%, and 30--40\% reference measurements from PPG243.
+\end{frame}
+
+\begin{frame}{Plots Requested for PHENIX Preliminary: direct photon spectrum}
+   \centering
+   \includegraphics[width=0.78\textwidth]{Pictures/spectrum_stat_syst.png}
+   \vspace{0.2em}
+
+   \small Direct photon invariant yield in Cu$+$Au minimum-bias collisions compared with the PHENIX Au$+$Au 40--50\% reference.
+\end{frame}
+
+\begin{frame}{Plots Requested for PHENIX Preliminary: integrated yield}
+   \centering
+   \includegraphics[width=0.7\textwidth]{Pictures/dndy_vs_dNch.png}
+   \vspace{0.2em}
+
+   \small Integrated direct photon yield $dN^{\rm dir}_{\gamma}/dy$ for $1<p_T<5$ GeV/$c$ versus charged-particle multiplicity at midrapidity.
+\end{frame}
+
+\begin{frame}{Physics message}
+   \normalsize
+   \begin{itemize}
+      \item The measured Cu$+$Au minimum-bias $R_\gamma$ is consistent with the PHENIX Au$+$Au reference measurements at similar charged-particle multiplicity.
+      \item The extracted direct photon invariant yield agrees with the Au$+$Au 40--50\% result within uncertainties.
+      \item The Cu$+$Au integrated direct photon yield follows the global scaling of $dN^{\rm dir}_{\gamma}/dy$ with $dN_{\rm ch}/d\eta$ observed across collision systems and beam energies.
+      \item The result extends the PHENIX external-conversion direct photon program to the asymmetric Cu$+$Au system.
+   \end{itemize}
+\end{frame}
+
+\begin{frame}{The Path to the Final Results}
+   \textbf{What improvements are expected for the final results?}\break
+   Using whole available data and centrality bins.\break
+   \break
+   \textbf{Is all data available used?}\break
+   No, about 30\% of the Run-12 Cu$+$Au minimum-bias sample is used.\break
+   \break
+   \textbf{How much statistical/systematical gain is expected before final publication?}\break
+   About $\sqrt{3}$ statistical gain is expected. \break
+   \break
+   \textbf{Provide a detailed timeline to publication:}\break
+   Prepare article draft by fall 2026.\break
+   \break
+   \textbf{Provide details on who will do the work and milestones towards final results:}\break
+   Tongzhou Guo, A. Drees, and Yu. Mitrankov.
+\end{frame}
+
+\end{document}
